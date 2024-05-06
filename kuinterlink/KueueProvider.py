@@ -4,7 +4,7 @@ import logging
 
 class KueueProvider(interlink.provider.Provider):
     def __init__(self):
-        super().__init__()
+        super().__init__(None)
         self.logger = logging.getLogger(self.__class__.__name__)
         
         self.logger.info("Starting KueueProvider")
