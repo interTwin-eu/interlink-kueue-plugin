@@ -14,7 +14,7 @@ class KueueProvider(interlink.provider.Provider):
         self.logger(f"Status {pod}")
 
 
-    def Delete(self, pod: interlink.PodReiuest) -> None:
+    def Delete(self, pod: interlink.PodRequest) -> None:
         try:
           self.logger(f"DELETE {pod}")
         except:
