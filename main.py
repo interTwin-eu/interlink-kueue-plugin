@@ -7,6 +7,7 @@ from datetime import datetime
 
 from fastapi import FastAPI, HTTPException
 
+import interlink
 from kuinterlink import KueueProvider
 
 # Initialize FastAPI app
