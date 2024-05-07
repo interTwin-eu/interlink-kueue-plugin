@@ -47,3 +47,11 @@ async def healtz() -> bool:
     return True
 
 
+@app.get("/interlink/pinglink")
+async def healtz() -> bool:
+    logging.debug("PingLink")
+    # async with kubernetes_api() as k8s:
+    #     ret = await k8s.list_pod_for_all_namespaces()
+    #     logging.debug(ret)
+
+    return True
