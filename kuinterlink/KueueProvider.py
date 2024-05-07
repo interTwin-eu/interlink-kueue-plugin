@@ -3,6 +3,8 @@ import logging
 
 from fastapi import HTTPException
 
+from .kubernetes_client import initialize_k8s
+
 
 class KueueProvider(interlink.provider.Provider):
     def __init__(self):
@@ -10,6 +12,7 @@ class KueueProvider(interlink.provider.Provider):
         self.logger = logging.getLogger(self.__class__.__name__)
         
         self.logger.info("Starting KueueProvider")
+        initialize_k8s()
 
     def create_pod(self,  pod: interlink.PodRequest) -> interlink.PodStatus:
         self.logger.info(f"Create pod {pod}")
