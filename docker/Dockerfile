@@ -6,5 +6,6 @@ RUN apt-get install git
 RUN pip install \
   "uvicorn[standard]" \
   "fastapi" \
+  "kubernetes-asyncio" \
   "git+https://github.com/interTwin-eu/interLink.git#egg=interlink&subdirectory=example"
 
