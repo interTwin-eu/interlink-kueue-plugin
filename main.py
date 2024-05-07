@@ -59,7 +59,7 @@ async def get_pod_logs(req: interlink.LogRequest) -> bytes:
     return b"This is the log! And even the exp."
 
 
-@app.get("/shutdown")
+@app.post("/shutdown")
 async def restart() -> str:
     logging.info("Shutting down")
     os.kill(os.getpid(), signal.SIGTERM)
