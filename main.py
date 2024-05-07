@@ -47,7 +47,7 @@ async def healtz() -> bool:
     return True
 
 
-@app.get("/interlink/pinglink")
+@app.post("/interlink/pinglink")
 async def healtz() -> bool:
     logging.debug("PingLink")
     # async with kubernetes_api() as k8s:
