@@ -36,8 +36,7 @@ async def get_pod_status(pods: List[interlink.PodRequest]) -> List[interlink.Pod
 async def get_pod_logs(req: interlink.LogRequest) -> bytes:
     return kueue_provider.get_logs(req)
 
-
-@app.post("/healthz")
+@app.get("/healthz")
 async def healtz() -> bool:
     logging.debug("Health tested: ok.")
     return True
