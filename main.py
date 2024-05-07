@@ -1,9 +1,11 @@
+import logging
 from typing import List
 
 from fastapi import FastAPI, HTTPException
 import interlink
 
 from kuinterlink import KueueProvider
+from kuinterlink import configuration as cfg
 
 # Initialize FastAPI app
 app = FastAPI()
@@ -11,6 +13,12 @@ app = FastAPI()
 # Please Take my provider and handle the interLink REST layer for me
 kueue_provider = KueueProvider()
 
+log_format = '%(asctime)-22s %(name)-10s %(levelname)-8s %(message)-90s'
+logging.basicConfig(
+    format=log_format,
+    level=logging.DEBUG if cfg.DEBUG else logging.INFO,
+)
+logging.debug("Enabled debug mode.")
 
 @app.post("/create")
 async def create_pod(pods: List[interlink.Pod]) -> str:
