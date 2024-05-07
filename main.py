@@ -1,5 +1,7 @@
 import logging
 from typing import List
+import os
+import signal
 
 from fastapi import FastAPI, HTTPException
 import interlink
@@ -50,10 +52,18 @@ async def get_pod_status(pods: List[interlink.PodRequest]) -> List[interlink.Pod
             ]
         ) for pod in pods]
 
+
 @app.get("/getLogs")
 async def get_pod_logs(req: interlink.LogRequest) -> bytes:
     #kueue_provider.get_logs(req)
     return b"This is the log! And even the exp."
+
+
+@app.get("/shutdown")
+async def restart() -> str:
+    logging.info("Shutting down")
+    os.kill(os.getpid(), signal.SIGTERM)
+    return "Shutting down"
 
 @app.get("/healthz")
 async def healtz() -> bool:
