@@ -41,7 +41,7 @@ async def get_pod_logs(req: interlink.LogRequest) -> bytes:
     #kueue_provider.get_logs(req)
     return b"This is the log! And even the exp."
 
-@app.post("/healthz")
+@app.get("/healthz")
 async def healtz() -> bool:
     logging.debug("Health tested: ok.")
     # async with kubernetes_api() as k8s:
