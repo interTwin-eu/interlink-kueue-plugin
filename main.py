@@ -6,6 +6,7 @@ import interlink
 
 from kuinterlink import KueueProvider
 from kuinterlink import configuration as cfg
+from kuinterlink.kubernetes_client import kubernetes_api
 
 # Initialize FastAPI app
 app = FastAPI()
@@ -39,6 +40,10 @@ async def get_pod_logs(req: interlink.LogRequest) -> bytes:
 @app.get("/healthz")
 async def healtz() -> bool:
     logging.debug("Health tested: ok.")
+    async with kubernetes_api() as k8s:
+        ret = await k8s.list_pod_for_all_namespaces()
+        logging.debug(ret)
+
     return True
 
 
