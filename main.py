@@ -28,15 +28,18 @@ async def create_pod(pods: List[interlink.Pod]) -> str:
 
 @app.post("/delete")
 async def delete_pod(pod: interlink.PodRequest) -> str:
-    return kueue_provider.delete_pod(pod)
+    kueue_provider.delete_pod(pod)
+    return "Certo, l'ho cancellato. Sì sì"
 
 @app.get("/status")
 async def get_pod_status(pods: List[interlink.PodRequest]) -> List[interlink.PodStatus]:
-    return kueue_provider.get_pod_status(pods)
+    kueue_provider.get_pod_status(pods)
+    return [interlink.PodStatus(name='pippo', UID='pluto', namespace='paperino', containers=[]) for _ in pods]
 
 @app.post("/getLogs")
 async def get_pod_logs(req: interlink.LogRequest) -> bytes:
-    return kueue_provider.get_logs(req)
+    kueue_provider.get_logs(req)
+    return b"This is the log! And even the exp."
 
 @app.get("/healthz")
 async def healtz() -> bool:
