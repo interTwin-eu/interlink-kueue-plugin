@@ -38,7 +38,7 @@ async def get_pod_status(pods: List[interlink.PodRequest]) -> List[interlink.Pod
 
 @app.get("/getLogs")
 async def get_pod_logs(req: interlink.LogRequest) -> bytes:
-    kueue_provider.get_logs(req)
+    #kueue_provider.get_logs(req)
     return b"This is the log! And even the exp."
 
 @app.post("/healthz")
