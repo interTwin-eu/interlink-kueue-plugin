@@ -36,24 +36,14 @@ async def get_pod_status(pods: List[interlink.PodRequest]) -> List[interlink.Pod
     kueue_provider.get_pod_status(pods)
     return [interlink.PodStatus(name='pippo', UID='pluto', namespace='paperino', containers=[]) for _ in pods]
 
-@app.post("/getLogs")
+@app.get("/getLogs")
 async def get_pod_logs(req: interlink.LogRequest) -> bytes:
     kueue_provider.get_logs(req)
     return b"This is the log! And even the exp."
 
-@app.get("/healthz")
+@app.post("/healthz")
 async def healtz() -> bool:
     logging.debug("Health tested: ok.")
-    # async with kubernetes_api() as k8s:
-    #     ret = await k8s.list_pod_for_all_namespaces()
-    #     logging.debug(ret)
-
-    return True
-
-
-@app.post("/interlink/pinglink")
-async def healtz() -> bool:
-    logging.debug("PingLink")
     # async with kubernetes_api() as k8s:
     #     ret = await k8s.list_pod_for_all_namespaces()
     #     logging.debug(ret)
