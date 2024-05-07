@@ -45,7 +45,7 @@ async def get_pod_status(pods: List[interlink.PodRequest]) -> List[interlink.Pod
                 interlink.ContainerStatus(
                     name=c.name,
                     state=interlink.ContainerStates(
-                        terminated=interlink.StateTerminated(exitCode=132, reason="OOMKilled")
+                        terminated=interlink.StateTerminated(exitCode=137, reason="OOMKilled")
                     )
                 )
                 for c in pod.spec.containers
