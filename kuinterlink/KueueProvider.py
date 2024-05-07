@@ -1,6 +1,8 @@
 import interlink
 import logging
 
+from fastapi import HTTPException
+
 
 class KueueProvider(interlink.provider.Provider):
     def __init__(self):
@@ -9,28 +11,18 @@ class KueueProvider(interlink.provider.Provider):
         
         self.logger.info("Starting KueueProvider")
 
+    def create_pod(self,  pod: interlink.PodRequest) -> interlink.PodStatus:
+        self.logger.info(f"Create pod {pod}")
 
-    def Create(self,  pod: interlink.PodRequest) -> interlink.PodStatus:
-        self.logger(f"Status {pod}")
-
-
-    def Delete(self, pod: interlink.PodRequest) -> None:
+    def delete_pod(self, pod: interlink.PodRequest) -> None:
         try:
-          self.logger(f"DELETE {pod}")
+            self.logger.info(f"Delete pod {pod}")
         except:
             raise HTTPException(status_code=404, detail="No containers found for UUID")
         return
 
+    def get_pod_status(self, pod: interlink.PodRequest) -> interlink.PodStatus:
+        self.logger.info(f"Retrieve status of pod {pod}")
 
-    def Status(self,  pod: interlink.PodRequest) -> interlink.PodStatus:
-        self.logger(f"Status {pod}")
-
-
-    def Logs(self,  pod: interlink.PodRequest) -> interlink.PodStatus:
-        self.logger(f"Logs {pod}")
-
-
-
-
-
-
+    def get_pod_logs(self, pod: interlink.PodRequest) -> interlink.PodStatus:
+        self.logger.info(f"Retrieve logs of pod {pod}")
