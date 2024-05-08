@@ -3,7 +3,7 @@ from typing import List
 import os
 import signal
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 import interlink
 
 from kuinterlink import KueueProvider
@@ -24,7 +24,8 @@ logging.basicConfig(
 logging.debug("Enabled debug mode.")
 
 @app.post("/create")
-async def create_pod(pods: List[interlink.Pod]) -> str:
+async def create_pod(pods: List[interlink.Pod], request: Request)]) -> str:
+    print (request)
     for pod in pods:
         await kueue_provider.create_pod(pod)
     return "Pod created\n"
