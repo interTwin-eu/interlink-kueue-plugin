@@ -4,7 +4,7 @@ metadata:
   name: {{ job.name }}
   namespace: {{ job.namespace }}
   labels:
-    kueue.x-k8s.io/queue-name: {{ job.metadata.queue }}
+    kueue.x-k8s.io/queue-name: {{ job.queue }}
 
   annotations:
     interlink.eu/original-metadata: "{{ job.metadata | tojson }}"
