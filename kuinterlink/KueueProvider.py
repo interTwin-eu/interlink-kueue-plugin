@@ -69,7 +69,7 @@ class KueueProvider(interlink.provider.Provider):
             raise HTTPException(status_code=404, detail="No containers found for UUID")
         return
 
-    def get_pod_status(self, pod: interlink.PodRequest) -> interlink.PodStatus:
+    async def get_pod_status(self, pod: interlink.PodRequest) -> interlink.PodStatus:
         self.logger.info(f"Status of pod {pod.metadata.name}.{pod.metadata.namespace} [{pod.metadata.uid}]")
         async with kubernetes_api('core') as k8s:
             # job = await k8s.get_namespaced_custom_object(

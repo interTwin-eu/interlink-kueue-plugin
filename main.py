@@ -36,22 +36,7 @@ async def delete_pod(pod: interlink.PodRequest) -> str:
 
 @app.get("/status")
 async def get_pod_status(pods: List[interlink.PodRequest]) -> List[interlink.PodStatus]:
-    kueue_provider.get_pod_status(pods)
-    return [
-        interlink.PodStatus(
-            name=pod.metadata.name,
-            UID=pod.metadata.uid,
-            namespace=pod.metadata.namespace,
-            containers=[
-                interlink.ContainerStatus(
-                    name=c.name,
-                    state=interlink.ContainerStates(
-                        terminated=interlink.StateTerminated(exitCode=137, reason="OOMKilled")
-                    )
-                )
-                for c in pod.spec.containers
-            ]
-        ) for pod in pods]
+    return [await kueue_provider.get_pod_status(pod) for pod in pods]
 
 
 @app.get("/getLogs")
