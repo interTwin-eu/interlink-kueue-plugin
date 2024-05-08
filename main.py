@@ -25,7 +25,7 @@ logging.debug("Enabled debug mode.")
 
 @app.post("/create")
 async def create_pod(pods: List[interlink.Pod], request: Request) -> str:
-    print (request)
+    print (request.headers)
     for pod in pods:
         await kueue_provider.create_pod(pod)
     return "Pod created\n"
