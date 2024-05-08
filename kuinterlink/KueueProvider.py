@@ -21,6 +21,7 @@ class KueueProvider(interlink.provider.Provider):
     async def create_pod(self,  pod: interlink.Pod) -> str:
         self.logger.info(f"Create pod {pod.pod.metadata.name}.{pod.pod.metadata.namespace} [{pod.pod.metadata.uid}]")
 
+        logging.debug("\n\n CREATE POD: \n " + pformat(pod.pod.dict(exclude_none=True)))
         parsed_request = parse_template(
             'Job',
             job=pod.pod.dict(
