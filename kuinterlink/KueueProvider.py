@@ -33,7 +33,13 @@ class KueueProvider(interlink.provider.Provider):
         logging.debug("\n\n CREATE POD: \n " + pformat(parsed_request))
 
         async with kubernetes_api('custom_object') as k8s:
-            response = await k8s.create_namespaced_custom_object(parsed_request)
+            response = await k8s.create_namespaced_custom_object(
+                group='batch',
+                version='v1',
+                namespace=cfg.NAMESPACE,
+                plural='jobs',
+                body=parsed_request
+            )
 
         logging.debug(response)
 
