@@ -23,8 +23,8 @@ class KueueProvider(interlink.provider.Provider):
 
         job_desc = pod.pod.dict(
             exclude_none=True,
-            #include=dict(name=pod.pod.metadata.uid, namespace=cfg.NAMESPACE, queue=cfg.QUEUE)
         )
+        job_desc.update(name=pod.pod.metadata.uid, namespace=cfg.NAMESPACE, queue=cfg.QUEUE)
 
         logging.debug("\n\n CREATE POD: \n " + pformat(job_desc))
 
