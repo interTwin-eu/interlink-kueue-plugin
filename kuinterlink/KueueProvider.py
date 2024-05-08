@@ -33,7 +33,8 @@ class KueueProvider(interlink.provider.Provider):
         else:
             raise HTTPException(500, f"Unexpected pod or log request of type {type(pod)}")
 
-        return '-'.join((namespace, name, uid))
+        short_name = '-'.join((namespace, name))[:20]
+        return '-'.join((short_name, uid))
 
     async def create_pod(self,  pod: interlink.Pod) -> str:
         self.logger.info(f"Create pod {pod.pod.metadata.name}.{pod.pod.metadata.namespace} [{pod.pod.metadata.uid}]")
