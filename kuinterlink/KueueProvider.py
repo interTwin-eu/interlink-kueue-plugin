@@ -85,7 +85,7 @@ class KueueProvider(interlink.provider.Provider):
             )
 
 
-        containers = sum([p.status.containerStatuses for p in pods.items], [])
+        containers = sum([p.status.container_statuses for p in pods.items], [])
 
         return interlink.PodStatus(
             name=pod.metadata.name,
