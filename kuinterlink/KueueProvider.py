@@ -1,6 +1,6 @@
 import interlink
 import logging
-from typing import Union
+from typing import Union, Collection
 
 from pprint import pformat
 from fastapi import HTTPException
@@ -36,15 +36,17 @@ class KueueProvider(interlink.provider.Provider):
         short_name = '-'.join((namespace, name))[:20]
         return '-'.join((short_name, uid))
 
-    async def create_pod(self,  pod: interlink.Pod) -> str:
-        self.logger.info(f"Create pod {pod.pod.metadata.name}.{pod.pod.metadata.namespace} [{pod.pod.metadata.uid}]")
+    async def create_job(self,  pod: interlink.PodRequest, volumes: Collection[interlink.Volume]) -> str:
+        """
+        Create a kueue job containing the pod
+        """
+        self.logger.info(f"Create pod {pod.metadata.name}.{pod.metadata.namespace} [{pod.metadata.uid}]")
 
-        job_desc = pod.pod.dict(exclude_none=True)
-        job_desc.update(name=self.get_readable_uid(pod.pod), namespace=cfg.NAMESPACE, queue=cfg.QUEUE)
-
-        logging.debug("\n\n CREATE POD: \n " + pformat(job_desc))
+        job_desc = pod.dict(exclude_none=True)
+        job_desc.update(name=self.get_readable_uid(pod), namespace=cfg.NAMESPACE, queue=cfg.QUEUE)
 
         parsed_request = parse_template('Job', job=job_desc)
+
         logging.debug("\n\n\n\n CREATE POD: \n\n\n " + pformat(parsed_request) + "\n\n\n\n")
 
         async with kubernetes_api('custom_object') as k8s:
@@ -58,10 +60,6 @@ class KueueProvider(interlink.provider.Provider):
 
         logging.debug(response)
 
-        # async with kubernetes_api() as k8s:
-        #     ret = await k8s.list_pod_for_all_namespaces()
-        #     logging.debug(ret)
-
         return "ok"
 
     def delete_pod(self, pod: interlink.PodRequest) -> None:
@@ -72,7 +70,33 @@ class KueueProvider(interlink.provider.Provider):
         return
 
     def get_pod_status(self, pod: interlink.PodRequest) -> interlink.PodStatus:
-        self.logger.info(f"Retrieve status of pod {pod}")
+        self.logger.info(f"Status of pod {pod.metadata.name}.{pod.metadata.namespace} [{pod.metadata.uid}]")
+        async with kubernetes_api('core') as k8s:
+            # job = await k8s.get_namespaced_custom_object(
+            #     group='batch',
+            #     version='v1',
+            #     namespace=cfg.NAMESPACE,
+            #     plural='jobs',
+            #     name=self.get_readable_uid(pod)
+            # )
+            pods = await k8s.list_namespaced_pod(
+                namespace=cfg.NAMESPACE,
+                label_selector=f"job-name={self.get_readable_uid(pod)}"
+            )
+
+        containers = sum([p.status.containerStatuses for p in pods.items], [])
+
+        return interlink.PodStatus(
+            name=pod.metadata.name,
+            UID=pod.metadata.uid,
+            namespace=pod.metadata.namespace,
+            containers=[
+                interlink.ContainerStatus(
+                    name=c.name,
+                    state=interlink.ContainerStates(**c.state)
+                ) for c in containers
+            ]
+        )
 
     def get_pod_logs(self, pod: interlink.PodRequest) -> interlink.PodStatus:
         self.logger.info(f"Retrieve logs of pod {pod}")
