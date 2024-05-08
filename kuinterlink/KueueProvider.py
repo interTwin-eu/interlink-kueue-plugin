@@ -1,5 +1,6 @@
 import interlink
 import logging
+from typing import Union
 
 from pprint import pformat
 from fastapi import HTTPException
@@ -18,13 +19,27 @@ class KueueProvider(interlink.provider.Provider):
         self.logger.info("Starting KueueProvider")
         initialize_k8s()
 
+    @staticmethod
+    def get_readable_uid(pod: Union[interlink.PodRequest, interlink.LogRequest]):
+        """Internal. Return a readable unique id used to name the pod."""
+        if isinstance(pod, interlink.PodRequest):
+            name = pod.metadata.name
+            namespace = pod.metadata.namespace
+            uid = pod.metadata.uid
+        elif isinstance(pod, interlink.LogRequest):
+            name = pod.PodName
+            namespace = pod.Namespace
+            uid = pod.PodUID
+        else:
+            raise HTTPException(500, f"Unexpected pod or log request of type {type(pod)}")
+
+        return '-'.join((namespace, name, uid))
+
     async def create_pod(self,  pod: interlink.Pod) -> str:
         self.logger.info(f"Create pod {pod.pod.metadata.name}.{pod.pod.metadata.namespace} [{pod.pod.metadata.uid}]")
 
-        job_desc = pod.pod.dict(
-            exclude_none=True,
-        )
-        job_desc.update(name=pod.pod.metadata.uid, namespace=cfg.NAMESPACE, queue=cfg.QUEUE)
+        job_desc = pod.pod.dict(exclude_none=True)
+        job_desc.update(name=self.get_readable_uid(pod.pod), namespace=cfg.NAMESPACE, queue=cfg.QUEUE)
 
         logging.debug("\n\n CREATE POD: \n " + pformat(job_desc))
 
