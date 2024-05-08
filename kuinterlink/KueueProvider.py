@@ -94,7 +94,7 @@ class KueueProvider(interlink.provider.Provider):
             containers=[
                 interlink.ContainerStatus(
                     name=c.name,
-                    state=interlink.ContainerStates(**c.state.dict())
+                    state=interlink.ContainerStates(**c.state.to_dict())
                 ) for c in containers
             ]
         )
