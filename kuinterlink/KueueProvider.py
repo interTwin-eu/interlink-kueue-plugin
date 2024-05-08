@@ -84,6 +84,7 @@ class KueueProvider(interlink.provider.Provider):
                 label_selector=f"job-name={self.get_readable_uid(pod)}"
             )
 
+
         containers = sum([p.status.containerStatuses for p in pods.items], [])
 
         return interlink.PodStatus(
