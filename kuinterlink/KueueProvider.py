@@ -14,8 +14,9 @@ class KueueProvider(interlink.provider.Provider):
         self.logger.info("Starting KueueProvider")
         initialize_k8s()
 
-    def create_pod(self,  pod: interlink.PodRequest) -> interlink.PodStatus:
-        self.logger.info(f"Create pod {pod}")
+    def create_pod(self,  pod: interlink.Pod) -> str:
+        self.logger.info(f"Create pod {pod.pod.metadata.name}.{pod.pod.metadata.namespace} [{pod.pod.metadata.uid}]")
+        return "ok"
 
     def delete_pod(self, pod: interlink.PodRequest) -> None:
         try:
