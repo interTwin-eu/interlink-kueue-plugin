@@ -21,15 +21,15 @@ class KueueProvider(interlink.provider.Provider):
     async def create_pod(self,  pod: interlink.Pod) -> str:
         self.logger.info(f"Create pod {pod.pod.metadata.name}.{pod.pod.metadata.namespace} [{pod.pod.metadata.uid}]")
 
-        logging.debug("\n\n CREATE POD: \n " + pformat(pod.pod.dict(exclude_none=True)))
-        parsed_request = parse_template(
-            'Job',
-            job=pod.pod.dict(
-                exclude_none=True,
-                include=dict(name=pod.pod.metadata.uid, namespace=cfg.NAMESPACE, queue=cfg.QUEUE)
-            )
+        job_desc = pod.pod.dict(
+            exclude_none=True,
+            include=dict(name=pod.pod.metadata.uid, namespace=cfg.NAMESPACE, queue=cfg.QUEUE)
         )
-        logging.debug("\n\n CREATE POD: \n " + pformat(parsed_request))
+
+        logging.debug("\n\n CREATE POD: \n " + pformat(job_desc))
+
+        parsed_request = parse_template('Job', job=job_desc)
+        logging.debug("\n\n\n\n CREATE POD: \n\n\n " + pformat(parsed_request) + "\n\n\n\n")
 
         async with kubernetes_api('custom_object') as k8s:
             response = await k8s.create_namespaced_custom_object(
