@@ -1,10 +1,13 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{ job.metadata.name }}
-  namespace: {{ job.metadata.namespace }}
+  name: {{ job.name }}
+  namespace: {{ job.namespace }}
   labels:
     kueue.x-k8s.io/queue-name: {{ job.metadata.queue }}
+
+  annotations:
+    interlink.eu/original-metadata: "{{ job.metadata | tojson }}"
 
 spec:
   parallelism: 1
