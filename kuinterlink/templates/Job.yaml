@@ -6,8 +6,10 @@ metadata:
   labels:
     kueue.x-k8s.io/queue-name: {{ job.queue }}
 
+  {% if job.metadata is defined %}
   annotations:
     interlink.eu/original-metadata: "{{ job.metadata | tojson }}"
+  {% endif %}
 
 spec:
   parallelism: 1
@@ -15,9 +17,9 @@ spec:
   suspend: true
   template:
     spec:
-      {% if job.initContainers %}
+      {% if job.spec.initContainers %}
       initContainers:
-        {% for container in job.initContainers %}
+        {% for container in job.spec.initContainers %}
         - name: {{ container.name }}
           image: {{ container.image }}
           tag: {{ container.tag }}
@@ -40,7 +42,7 @@ spec:
         {% endif %}
 
       containers:
-        {% for container in job.containers %}
+        {% for container in job.spec.containers %}
         - name: {{ container.name }}
           image: {{ container.image }}
           tag: {{ container.tag }}
@@ -61,9 +63,9 @@ spec:
           {% endif %}
         {% endfor %}
 
-      {% if job.volumes is defined %}
+      {% if job.spec.volumes is defined %}
       volumes:
-        {% for volume in job.volumes %}
+        {% for volume in job.spec.volumes %}
         - name: {{ volume.name }}
           {% if volume.volumeSource is defined and volume.volumeSource.emptyDir is defined %}
           emptyDir: {{ volume.volumeSource.emptyDir | tojson }}
