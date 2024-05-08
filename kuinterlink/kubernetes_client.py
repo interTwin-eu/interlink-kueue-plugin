@@ -3,14 +3,18 @@ from contextlib import asynccontextmanager
 import traceback
 import logging
 import json
+from typing import Literal
 
 import kubernetes_asyncio as k8s
 from fastapi import HTTPException
+
 
 __API_GROUPS__ = dict(
     core=k8s.client.CoreV1Api,
     custom_object=k8s.client.CustomObjectsApi
 )
+
+ApiGroup = Literal['core', 'custom_object']
 
 
 def initialize_k8s():
@@ -24,7 +28,7 @@ def initialize_k8s():
 
 
 @asynccontextmanager
-async def kubernetes_api(group: str = 'core'):
+async def kubernetes_api(group: ApiGroup = 'core'):
     logger = logging.getLogger("Kubernetes")
     try:
         yield __API_GROUPS__[group]()

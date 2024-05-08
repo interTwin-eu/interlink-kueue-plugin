@@ -1,0 +1,76 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ job.metadata.name }}
+  namespace: {{ job.metadata.namespace }}
+  labels:
+    kueue.x-k8s.io/queue-name: {{ job.metadata.queue }}
+
+spec:
+  parallelism: 1
+  completions: 1
+  suspend: true
+  template:
+    spec:
+      {% if job.initContainers %}
+      initContainers:
+        {% for container in job.initContainers %}
+        - name: {{ container.name }}
+          image: {{ container.image }}
+          tag: {{ container.tag }}
+          command: {{ container.command | tojson }}
+          args: {{ container.args | tojson }}
+          {% if container.resources is defined %}
+          resources: {{ container.resources | tojson }}
+          {% endif %}
+          {% if 'volumeMounts' in container and container.volumeMounts %}
+          volumeMounts:
+            {% for volumeMount in container.volumeMounts %}
+            - name: {{ volumeMount.name }}
+              mountPath: {{ volumeMount.mountPath }}
+              {% if volumeMount.subPath %}
+              subPath: {{ volumeMount.subPath }}
+              {% endif %}
+            {% endfor %}
+          {% endif %}
+        {% endfor %}
+        {% endif %}
+
+      containers:
+        {% for container in job.containers %}
+        - name: {{ container.name }}
+          image: {{ container.image }}
+          tag: {{ container.tag }}
+          command: {{ container.command | tojson }}
+          args: {{ container.args | tojson }}
+          {% if container.resources is defined %}
+          resources: {{ container.resources | tojson }}
+          {% endif %}
+          {% if 'volumeMounts' in container and container.volumeMounts %}
+          volumeMounts:
+            {% for volumeMount in container.volumeMounts %}
+            - name: {{ volumeMount.name }}
+              mountPath: {{ volumeMount.mountPath }}
+              {% if volumeMount.subPath %}
+              subPath: {{ volumeMount.subPath }}
+              {% endif %}
+            {% endfor %}
+          {% endif %}
+        {% endfor %}
+
+      {% if job.volumes is defined %}
+      volumes:
+        {% for volume in job.volumes %}
+        - name: {{ volume.name }}
+          {% if volume.volumeSource is defined and volume.volumeSource.emptyDir is defined %}
+          emptyDir: {{ volume.volumeSource.emptyDir | tojson }}
+          {% endif %}
+          {% if volume.volumeSource is defined and volume.volumeSource.secret is defined %}
+          secret: {{ volume.volumeSource.secret | tojson }}
+          {% endif %}
+          {% if volume.volumeSource is defined and volume.volumeSource.configMap is defined %}
+          configMap: {{ volume.volumeSource.configMap | tojson }}
+          {% endif %}
+
+        {% endfor %}
+      {% endif %}
