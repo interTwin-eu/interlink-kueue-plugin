@@ -17,6 +17,7 @@ spec:
   suspend: true
   template:
     spec:
+      restartPolicy: Never
       {% if job.spec.initContainers %}
       initContainers:
         {% for container in job.spec.initContainers %}
