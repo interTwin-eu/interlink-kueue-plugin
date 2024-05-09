@@ -5,6 +5,7 @@ from typing import Union, Collection
 from pprint import pformat
 from fastapi import HTTPException
 
+from kubernetes_asyncio.client.models import V1ContainerState
 from .kubernetes_client import initialize_k8s
 from .kubernetes_client import kubernetes_api
 from .parse_template import parse_template
@@ -69,6 +70,38 @@ class KueueProvider(interlink.provider.Provider):
             raise HTTPException(status_code=404, detail="No containers found for UUID")
         return
 
+    @staticmethod
+    def create_container_states(container_state: V1ContainerState) -> interlink.ContainerStates:
+        if container_state.terminated is not None:
+            return interlink.ContainerStates(
+                terminated=interlink.StateTerminated(
+                    exitCode=container_state.terminated.exit_code,
+                    message=container_state.terminated.message,
+                )
+            )
+
+        if container_state.running is not None:
+            return interlink.ContainerStates(
+                running=interlink.StateRunning(
+                    startedAt=container_state.running.started_at,
+                )
+            )
+
+        if container_state.waiting is not None:
+            return interlink.ContainerStates(
+                waiting=interlink.StateWaiting(
+                    message=container_state.waiting.message,
+                    reason=container_state.waiting.reason,
+                )
+            )
+
+        return interlink.ContainerStates(
+            waiting=interlink.StateWaiting(
+                message="Pending",
+                reason="Unknown",
+            )
+        )
+
     async def get_pod_status(self, pod: interlink.PodRequest) -> interlink.PodStatus:
         self.logger.info(f"Status of pod {pod.metadata.name}.{pod.metadata.namespace} [{pod.metadata.uid}]")
         async with kubernetes_api('core') as k8s:
@@ -84,8 +117,7 @@ class KueueProvider(interlink.provider.Provider):
                 label_selector=f"job-name={self.get_readable_uid(pod)}"
             )
 
-
-        containers = sum([p.status.container_statuses for p in pods.items], [])
+        container_statuses = sum([p.status.container_statuses for p in pods.items], [])
 
         return interlink.PodStatus(
             name=pod.metadata.name,
@@ -93,9 +125,9 @@ class KueueProvider(interlink.provider.Provider):
             namespace=pod.metadata.namespace,
             containers=[
                 interlink.ContainerStatus(
-                    name=c.name,
-                    state=interlink.ContainerStates(**c.state.to_dict())
-                ) for c in containers
+                    name=cs.name,
+                    state=self.create_container_states(cs.state),
+                ) for cs in container_statuses
             ]
         )
 
