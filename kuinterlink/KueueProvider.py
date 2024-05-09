@@ -144,6 +144,6 @@ class KueueProvider(interlink.provider.Provider):
                 limit_bytes=log_request.Opts.LimitBytes,
                 timestamps=log_request.Opts.Timestamps,
                 previous=log_request.Opts.Previous,
-                since_seconds=log_request.Opts.SinceSeconds,
+                #since_seconds=log_request.Opts.SinceSeconds,
             )
 
