@@ -55,6 +55,9 @@ class KueueProvider(interlink.provider.Provider):
         volume_manifests = []
 
         for volume_to_mount in pod.spec.volumes:
+            if volume_to_mount.volumeSource is None:
+                continue
+
             original_name = volume_to_mount.name
             new_name = self.generate_volume_id(
                 volume_to_mount.name,
