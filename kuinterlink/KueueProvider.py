@@ -93,10 +93,12 @@ class KueueProvider(interlink.provider.Provider):
             )
 
         if container_state.waiting is not None:
+            message = container_state.waiting.message
+            reason = container_state.waiting.reason
             return interlink.ContainerStates(
                 waiting=interlink.StateWaiting(
-                    message=container_state.waiting.message,
-                    reason=container_state.waiting.reason,
+                    message=message if message is not None else "Pending",
+                    reason=reason if reason is not None else "Unknown",
                 )
             )
 
