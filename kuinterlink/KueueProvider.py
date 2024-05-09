@@ -1,3 +1,5 @@
+import uuid
+
 import interlink
 import logging
 from typing import Union, Collection
@@ -37,11 +39,55 @@ class KueueProvider(interlink.provider.Provider):
         short_name = '-'.join((namespace, name))[:20]
         return '-'.join((short_name, uid))
 
+    @staticmethod
+    def generate_volume_id(volume_name: str, pod_name: str, namespace: str):
+        """Internal. Return a readable unique id used to name the pod."""
+        uid = str(uuid.uuid4())
+        short_name = '-'.join((namespace[:10], pod_name[:10], volume_name[:10]))[:33]
+        return '-'.join((short_name, uid))
+
     async def create_job(self,  pod: interlink.PodRequest, volumes: Collection[interlink.Volume]) -> str:
         """
         Create a kueue job containing the pod
         """
         self.logger.info(f"Create pod {pod.metadata.name}.{pod.metadata.namespace} [{pod.metadata.uid}]")
+
+        volume_manifests = []
+
+        for volume_to_mount in pod.spec.volumes:
+            original_name = volume_to_mount.name
+            new_name = self.generate_volume_id(
+                volume_to_mount.name,
+                pod.metadata.name,
+                pod.metadata.namespace
+            )
+
+            # Update the name of the volume in the pod manifest
+            volume_to_mount.name = new_name
+
+            if volume_to_mount.volumeSource.configMap is not None:
+                for container in volumes:
+                    for config_map in container.configMaps:
+                        if config_map.metadata.name == original_name:
+                            volume_manifests.append(
+                                parse_template(
+                                    'ConfigMap',
+                                    **config_map.dict(exclude_none=True),
+                                    name=new_name,
+                                    namespace=cfg.NAMESPACE,
+                                ))
+
+            elif volume_to_mount.volumeSource.secret is not None:
+                for container in volumes:
+                    for secret in container.secrets:
+                        if secret.metadata.name == original_name:
+                            volume_manifests.append(
+                                parse_template(
+                                    'Secret',
+                                    **secret.dict(exclude_none=True),
+                                    name=new_name,
+                                    namespace=cfg.NAMESPACE,
+                                ))
 
         job_desc = pod.dict(exclude_none=True)
         job_desc.update(name=self.get_readable_uid(pod), namespace=cfg.NAMESPACE, queue=cfg.QUEUE)
@@ -51,6 +97,17 @@ class KueueProvider(interlink.provider.Provider):
         logging.debug("\n\n\n\n CREATE POD: \n\n\n " + pformat(parsed_request) + "\n\n\n\n")
 
         async with kubernetes_api('custom_object') as k8s:
+            for volume_manifest in volume_manifests:
+                response = await k8s.create_namespaced_custom_object(
+                    group='',
+                    version='v1',
+                    namespace=cfg.NAMESPACE,
+                    plural={'ConfigMap': 'configmaps', 'Secret': 'secrets'}[volume_manifest['kind']],
+                    body=volume_manifest
+                )
+                logging.debug(f"Defining volume {volume_manifest['metadata']['name']}")
+                logging.debug(response)
+
             response = await k8s.create_namespaced_custom_object(
                 group='batch',
                 version='v1',
@@ -59,8 +116,7 @@ class KueueProvider(interlink.provider.Provider):
                 body=parsed_request
             )
 
-        print (f"\n\n\n\n{volumes}\n\n\n\n")
-
+        logging.debug(f"Defining job {parsed_request['metadata']['name']}")
         logging.debug(response)
 
         return "ok"
@@ -126,7 +182,8 @@ class KueueProvider(interlink.provider.Provider):
                 label_selector=f"job-name={self.get_readable_uid(pod)}"
             )
 
-        container_statuses = sum([p.status.container_statuses for p in pods.items], [])
+        container_statuses = (sum([p.status.container_statuses for p in pods.items], [])
+                              if len(pods.items) > 0 else [])
 
         return interlink.PodStatus(
             name=pod.metadata.name,

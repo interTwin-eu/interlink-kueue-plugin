@@ -5,7 +5,7 @@ import yaml
 
 from typing import Literal
 
-AvailableTemplate = Literal['Job']
+AvailableTemplate = Literal['Job', 'ConfigMap', 'Secret']
 
 
 def parse_template(template_name: AvailableTemplate, **kwargs):
