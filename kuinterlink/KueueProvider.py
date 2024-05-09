@@ -77,7 +77,7 @@ class KueueProvider(interlink.provider.Provider):
             return interlink.ContainerStates(
                 terminated=interlink.StateTerminated(
                     exitCode=container_state.terminated.exit_code,
-                    message=reason if reason is not None else "Terminated.",
+                    reason=reason if reason is not None else "Terminated.",
                 )
             )
 
