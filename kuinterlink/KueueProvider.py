@@ -141,7 +141,7 @@ class KueueProvider(interlink.provider.Provider):
                 label_selector=f"job-name={self.get_readable_uid(log_request)}"
             )
 
-            if len(pods) > 1:
+            if len(pods.items) > 1:
                 raise HTTPException(501, "Ambiguous request.")
 
             return await k8s.read_namespaced_pod_log(
