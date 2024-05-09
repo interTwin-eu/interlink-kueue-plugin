@@ -145,7 +145,7 @@ class KueueProvider(interlink.provider.Provider):
                 raise HTTPException(501, "Ambiguous request.")
 
             return await k8s.read_namespaced_pod_log(
-                name=pods[0].metadata.name,
+                name=pods.items[0].metadata.name,
                 namespace=cfg.NAMESPACE,
                 container=log_request.ContainerName,
                 tail_lines=log_request.Opts.Tail,
