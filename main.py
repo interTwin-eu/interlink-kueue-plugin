@@ -42,12 +42,11 @@ async def get_pod_status(pods: List[interlink.PodRequest]) -> List[interlink.Pod
 
 @app.get("/getLogs")
 async def get_pod_logs(req: interlink.LogRequest) -> bytes:
-    #kueue_provider.get_logs(req)
-    return b"This is the log! And even the exp."
+    return kueue_provider.get_logs(req).encode('utf-8')
 
 
 @app.post("/shutdown")
-async def restart() -> str:
+async def shutdown() -> str:
     logging.info("Shutting down")
     os.kill(os.getpid(), signal.SIGTERM)
     return "Shutting down"

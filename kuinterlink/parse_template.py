@@ -7,6 +7,7 @@ from typing import Literal
 
 AvailableTemplate = Literal['Job']
 
+
 def parse_template(template_name: AvailableTemplate, **kwargs):
     template_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')
     print (template_path)
@@ -14,8 +15,6 @@ def parse_template(template_name: AvailableTemplate, **kwargs):
     template = jinja_env.get_template(f"{template_name}.yaml")
     parsed_yaml = template.render(**kwargs)
     return yaml.safe_load(parsed_yaml)
-
-
 
 
 if __name__ == '__main__':
@@ -62,4 +61,4 @@ if __name__ == '__main__':
 
     ))
 
-    pprint (job_example)
+    pprint(job_example)
