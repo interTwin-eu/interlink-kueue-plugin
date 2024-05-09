@@ -73,10 +73,11 @@ class KueueProvider(interlink.provider.Provider):
     @staticmethod
     def create_container_states(container_state: V1ContainerState) -> interlink.ContainerStates:
         if container_state.terminated is not None:
+            reason = container_state.terminated.reason
             return interlink.ContainerStates(
                 terminated=interlink.StateTerminated(
                     exitCode=container_state.terminated.exit_code,
-                    message=container_state.terminated.message,
+                    message=reason if reason is not None else "Terminated.",
                 )
             )
 
