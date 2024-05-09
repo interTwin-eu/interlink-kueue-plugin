@@ -132,5 +132,18 @@ class KueueProvider(interlink.provider.Provider):
             ]
         )
 
-    def get_pod_logs(self, pod: interlink.PodRequest) -> interlink.PodStatus:
-        self.logger.info(f"Retrieve logs of pod {pod}")
+    async def get_logs(self, log_request: interlink.PodRequest) -> str:
+        self.logger.info(f"Log of pod {log_request.PodName}.{log_request.Namespace} [{log_request.PodUID}]")
+
+        async with kubernetes_api('core') as k8s:
+            return await k8s.read_namespaced_pod_log(
+                name=self.get_readable_uid(log_request),
+                namespace=cfg.NAMESPACE,
+                container=log_request.ContainerName,
+                tail_lines=log_request.Opts.Tail,
+                limit_bytes=log_request.Opts.LimitBytes,
+                timestamps=log_request.Opts.Timestamps,
+                previous=log_request.Opts.Previous,
+                since_seconds=log_request.Opts.SinceSeconds,
+            )
+
