@@ -136,8 +136,16 @@ class KueueProvider(interlink.provider.Provider):
         self.logger.info(f"Log of pod {log_request.PodName}.{log_request.Namespace} [{log_request.PodUID}]")
 
         async with kubernetes_api('core') as k8s:
+            pods = await k8s.list_namespaced_pod(
+                namespace=cfg.NAMESPACE,
+                label_selector=f"job-name={self.get_readable_uid(log_request)}"
+            )
+
+            if len(pods) > 1:
+                HTTPException(501, "Ambiguous request.")
+
             return await k8s.read_namespaced_pod_log(
-                name=self.get_readable_uid(log_request),
+                name=pods[0].metadata.name,
                 namespace=cfg.NAMESPACE,
                 container=log_request.ContainerName,
                 tail_lines=log_request.Opts.Tail,
