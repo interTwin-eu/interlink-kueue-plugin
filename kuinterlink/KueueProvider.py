@@ -132,7 +132,7 @@ class KueueProvider(interlink.provider.Provider):
             ]
         )
 
-    async def get_logs(self, log_request: interlink.PodRequest) -> str:
+    async def get_pod_logs(self, log_request: interlink.LogRequest) -> str:
         self.logger.info(f"Log of pod {log_request.PodName}.{log_request.Namespace} [{log_request.PodUID}]")
 
         async with kubernetes_api('core') as k8s:
