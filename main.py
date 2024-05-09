@@ -41,9 +41,9 @@ async def get_pod_status(pods: List[interlink.PodRequest]) -> List[interlink.Pod
 
 
 @app.get("/getLogs")
-async def get_pod_logs(req: interlink.LogRequest) -> bytes:
+async def get_pod_logs(req: interlink.LogRequest) -> str:
     log = await kueue_provider.get_pod_logs(req)
-    return log.encode('utf-8')
+    return log #.encode('utf-8')
 
 
 @app.post("/shutdown")

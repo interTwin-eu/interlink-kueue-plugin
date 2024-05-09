@@ -148,10 +148,10 @@ class KueueProvider(interlink.provider.Provider):
                 name=pods.items[0].metadata.name,
                 namespace=cfg.NAMESPACE,
                 container=log_request.ContainerName,
-                # tail_lines=log_request.Opts.Tail,
-                # limit_bytes=log_request.Opts.LimitBytes,
-                # timestamps=log_request.Opts.Timestamps,
-                # previous=log_request.Opts.Previous,
+                tail_lines=log_request.Opts.Tail,
+                limit_bytes=log_request.Opts.LimitBytes,
+                timestamps=log_request.Opts.Timestamps,
+                previous=log_request.Opts.Previous,
                 # since_seconds=log_request.Opts.SinceSeconds,
             )
 
