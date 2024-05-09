@@ -31,8 +31,8 @@ async def create_pod(pods: List[interlink.Pod]) -> str:
 
 @app.post("/delete")
 async def delete_pod(pod: interlink.PodRequest) -> str:
-    kueue_provider.delete_pod(pod)
-    return "Certo, l'ho cancellato. Sì sì"
+    await kueue_provider.delete_pod(pod)
+    return "Pod deleted"
 
 @app.get("/status")
 async def get_pod_status(pods: List[interlink.PodRequest]) -> List[interlink.PodStatus]:

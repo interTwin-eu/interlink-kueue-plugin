@@ -63,12 +63,16 @@ class KueueProvider(interlink.provider.Provider):
 
         return "ok"
 
-    def delete_pod(self, pod: interlink.PodRequest) -> None:
-        try:
-            self.logger.info(f"Delete pod {pod}")
-        except:
-            raise HTTPException(status_code=404, detail="No containers found for UUID")
-        return
+    async def delete_pod(self, pod: interlink.PodRequest) -> None:
+        async with kubernetes_api('custom_object') as k8s:
+            await k8s.delete_namespaced_custom_object(
+                group="batch",
+                version="v1",
+                namespace=cfg.NAMESPACE,
+                plural='jobs',
+                name=self.get_readable_uid(pod)
+            )
+
 
     @staticmethod
     def create_container_states(container_state: V1ContainerState) -> interlink.ContainerStates:
