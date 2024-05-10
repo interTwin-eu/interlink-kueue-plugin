@@ -52,7 +52,8 @@ class KueueProvider(interlink.provider.Provider):
         """
         self.logger.info(f"Create pod {pod.metadata.name}.{pod.metadata.namespace} [{pod.metadata.uid}]")
 
-        volume_manifests = []
+        config_map_manifests = []
+        secret_manifests = []
 
         for volume_to_mount in pod.spec.volumes:
             if volume_to_mount.configMap is not None:
@@ -64,7 +65,7 @@ class KueueProvider(interlink.provider.Provider):
                 for container in volumes:
                     for config_map in container.configMaps:
                         if config_map.metadata.name == original_name:
-                            volume_manifests.append(
+                            config_map_manifests.append(
                                 parse_template(
                                     'ConfigMap',
                                     **config_map.dict(exclude_none=True),
@@ -81,7 +82,7 @@ class KueueProvider(interlink.provider.Provider):
                 for container in volumes:
                     for secret in container.secrets:
                         if secret.metadata.name == original_name:
-                            volume_manifests.append(
+                            secret_manifests.append(
                                 parse_template(
                                     'Secret',
                                     **secret.dict(exclude_none=True),
@@ -97,15 +98,14 @@ class KueueProvider(interlink.provider.Provider):
         logging.debug("\n\n\n\n CREATE POD: \n\n\n " + pformat(parsed_request) + "\n\n\n\n")
 
         async with kubernetes_api('custom_object') as k8s:
-            for volume_manifest in volume_manifests:
-                response = await k8s.create_namespaced_custom_object(
-                    group='',
-                    version='v1',
-                    namespace=cfg.NAMESPACE,
-                    plural={'ConfigMap': 'configmaps', 'Secret': 'secrets'}[volume_manifest['kind']],
-                    body=volume_manifest
-                )
-                logging.debug(f"Defining volume {volume_manifest['metadata']['name']}")
+            for volume_manifest in config_map_manifests:
+                response = await k8s.create_namespaced_config_map(cfg.NAMESPACE, body=volume_manifest)
+                logging.debug(f"Defining config_map {volume_manifest['metadata']['name']}")
+                logging.debug(response)
+
+            for volume_manifest in secret_manifests:
+                response = await k8s.create_namespaced_secret(cfg.NAMESPACE, body=volume_manifest)
+                logging.debug(f"Defining secret {volume_manifest['metadata']['name']}")
                 logging.debug(response)
 
             response = await k8s.create_namespaced_custom_object(
