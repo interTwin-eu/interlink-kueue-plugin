@@ -97,7 +97,7 @@ class KueueProvider(interlink.provider.Provider):
 
         logging.debug("\n\n\n\n CREATE POD: \n\n\n " + pformat(parsed_request) + "\n\n\n\n")
 
-        async with kubernetes_api('custom_object') as k8s:
+        async with kubernetes_api('core') as k8s:
             for volume_manifest in config_map_manifests:
                 response = await k8s.create_namespaced_config_map(cfg.NAMESPACE, body=volume_manifest)
                 logging.debug(f"Defining config_map {volume_manifest['metadata']['name']}")
@@ -108,6 +108,7 @@ class KueueProvider(interlink.provider.Provider):
                 logging.debug(f"Defining secret {volume_manifest['metadata']['name']}")
                 logging.debug(response)
 
+        async with kubernetes_api('custom_object') as k8s:
             response = await k8s.create_namespaced_custom_object(
                 group='batch',
                 version='v1',
