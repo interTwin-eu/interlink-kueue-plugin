@@ -55,7 +55,7 @@ class KueueProvider(interlink.provider.Provider):
         volume_manifests = []
 
         for volume_to_mount in pod.spec.volumes:
-            if volume_to_mount.config_map is None and volume_to_mount.secret is None:
+            if volume_to_mount.configMap is None and volume_to_mount.secret is None:
                 continue
 
             original_name = volume_to_mount.name
