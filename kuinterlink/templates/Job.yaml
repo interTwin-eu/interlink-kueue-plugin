@@ -26,18 +26,29 @@ spec:
           image: {{ container.image }}
           tag: {{ container.tag }}
           command: {{ container.command | tojson }}
+
+          {% if container.args is defined %}
           args: {{ container.args | tojson }}
+          {% endif %}
+
           {% if container.resources is defined %}
           resources: {{ container.resources | tojson }}
           {% endif %}
+
+          {% if container.env is defined %}
+          env: {{ container.env | tojson }}
+          {% endif %}
+
           {% if 'volumeMounts' in container and container.volumeMounts %}
           volumeMounts:
             {% for volumeMount in container.volumeMounts %}
             - name: {{ volumeMount.name }}
               mountPath: {{ volumeMount.mountPath }}
+
               {% if volumeMount.subPath %}
               subPath: {{ volumeMount.subPath }}
               {% endif %}
+
             {% endfor %}
           {% endif %}
         {% endfor %}
@@ -49,18 +60,29 @@ spec:
           image: {{ container.image }}
           tag: {{ container.tag }}
           command: {{ container.command | tojson }}
+
+          {% if container.args is defined %}
           args: {{ container.args | tojson }}
+          {% endif %}
+
           {% if container.resources is defined %}
           resources: {{ container.resources | tojson }}
           {% endif %}
+
+          {% if container.env is defined %}
+          env: {{ container.env | tojson }}
+          {% endif %}
+
           {% if 'volumeMounts' in container and container.volumeMounts %}
           volumeMounts:
             {% for volumeMount in container.volumeMounts %}
             - name: {{ volumeMount.name }}
               mountPath: {{ volumeMount.mountPath }}
+
               {% if volumeMount.subPath %}
               subPath: {{ volumeMount.subPath }}
               {% endif %}
+
             {% endfor %}
           {% endif %}
         {% endfor %}
