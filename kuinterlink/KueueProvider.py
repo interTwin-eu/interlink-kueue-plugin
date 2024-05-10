@@ -55,7 +55,7 @@ class KueueProvider(interlink.provider.Provider):
         volume_manifests = []
 
         for volume_to_mount in pod.spec.volumes:
-            if volume_to_mount.volumeSource is None:
+            if volume_to_mount.config_map is None and volume_to_mount.secret is None:
                 continue
 
             original_name = volume_to_mount.name
@@ -68,7 +68,7 @@ class KueueProvider(interlink.provider.Provider):
             # Update the name of the volume in the pod manifest
             volume_to_mount.name = new_name
 
-            if volume_to_mount.volumeSource.configMap is not None:
+            if volume_to_mount.configMap is not None:
                 for container in volumes:
                     for config_map in container.configMaps:
                         if config_map.metadata.name == original_name:
@@ -125,6 +125,7 @@ class KueueProvider(interlink.provider.Provider):
         return "ok"
 
     async def delete_pod(self, pod: interlink.PodRequest) -> None:
+        # TODO: Delete related volumes (ConfigMaps and Secrets!)
         async with kubernetes_api('custom_object') as k8s:
             await k8s.delete_namespaced_custom_object(
                 group="batch",
@@ -210,7 +211,7 @@ class KueueProvider(interlink.provider.Provider):
             )
 
             if len(pods.items) > 1:
-                raise HTTPException(501, "Ambiguous request.")
+                raise HTTPException(501, "Too many pods for a single job")
 
             return await k8s.read_namespaced_pod_log(
                 name=pods.items[0].metadata.name,
