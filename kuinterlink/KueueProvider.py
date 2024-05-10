@@ -99,11 +99,13 @@ class KueueProvider(interlink.provider.Provider):
 
         async with kubernetes_api('core') as k8s:
             for volume_manifest in config_map_manifests:
+                logging.debug("\n\n\n\n CREATE CONFIG MAP: \n\n\n " + pformat(volume_manifest) + "\n\n\n\n")
                 response = await k8s.create_namespaced_config_map(cfg.NAMESPACE, body=volume_manifest)
                 logging.debug(f"Defining config_map {volume_manifest['metadata']['name']}")
                 logging.debug(response)
 
             for volume_manifest in secret_manifests:
+                logging.debug("\n\n\n\n CREATE SECRET: \n\n\n " + pformat(volume_manifest) + "\n\n\n\n")
                 response = await k8s.create_namespaced_secret(cfg.NAMESPACE, body=volume_manifest)
                 logging.debug(f"Defining secret {volume_manifest['metadata']['name']}")
                 logging.debug(response)
