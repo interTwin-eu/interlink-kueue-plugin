@@ -63,15 +63,16 @@ class KueueProvider(interlink.provider.Provider):
                 # Update the name of the volume in the pod manifest
                 volume_to_mount.configMap.name = new_name
                 for container in volumes:
-                    for config_map in container.configMaps:
-                        if config_map.metadata.name == original_name:
-                            config_map_manifests.append(
-                                parse_template(
-                                    'ConfigMap',
-                                    **config_map.dict(exclude_none=True),
-                                    name=new_name,
-                                    namespace=cfg.NAMESPACE,
-                                ))
+                    if container.configMaps is not None:
+                        for config_map in container.configMaps:
+                            if config_map.metadata.name == original_name:
+                                config_map_manifests.append(
+                                    parse_template(
+                                        'ConfigMap',
+                                        **config_map.dict(exclude_none=True),
+                                        name=new_name,
+                                        namespace=cfg.NAMESPACE,
+                                    ))
 
             if volume_to_mount.secret is not None:
                 original_name = volume_to_mount.secret.name
@@ -80,15 +81,16 @@ class KueueProvider(interlink.provider.Provider):
                 # Update the name of the volume in the pod manifest
                 volume_to_mount.secret.name = new_name
                 for container in volumes:
-                    for secret in container.secrets:
-                        if secret.metadata.name == original_name:
-                            secret_manifests.append(
-                                parse_template(
-                                    'Secret',
-                                    **secret.dict(exclude_none=True),
-                                    name=new_name,
-                                    namespace=cfg.NAMESPACE,
-                                ))
+                    if container.secrets is not None:
+                        for secret in container.secrets:
+                            if secret.metadata.name == original_name:
+                                secret_manifests.append(
+                                    parse_template(
+                                        'Secret',
+                                        **secret.dict(exclude_none=True),
+                                        name=new_name,
+                                        namespace=cfg.NAMESPACE,
+                                    ))
 
         job_desc = pod.dict(exclude_none=True)
         job_desc.update(name=self.get_readable_uid(pod), namespace=cfg.NAMESPACE, queue=cfg.QUEUE)
