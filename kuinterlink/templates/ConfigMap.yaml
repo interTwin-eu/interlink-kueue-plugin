@@ -11,5 +11,5 @@ metadata:
 data: {{ data | tojson }}
 
 {% if binaryData is defined %}
-binaryData: {{ binaryData | to json }}
+binaryData: {{ binaryData | tojson }}
 {% endif %}
