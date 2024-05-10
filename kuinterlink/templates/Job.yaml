@@ -31,6 +31,10 @@ spec:
           args: {{ container.args | tojson }}
           {% endif %}
 
+          {% if container.securityContext is defined %}
+          securityContext: {{ container.securityContext | tojson }}
+          {% endif %}
+
           {% if container.resources is defined %}
           resources: {{ container.resources | tojson }}
           {% endif %}
@@ -60,6 +64,10 @@ spec:
           image: {{ container.image }}
           tag: {{ container.tag }}
           command: {{ container.command | tojson }}
+
+          {% if container.securityContext is defined %}
+          securityContext: {{ container.securityContext | tojson }}
+          {% endif %}
 
           {% if container.args is defined %}
           args: {{ container.args | tojson }}
