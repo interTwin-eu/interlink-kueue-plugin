@@ -72,7 +72,7 @@ class KueueProvider(interlink.provider.Provider):
                                     namespace=cfg.NAMESPACE,
                                 ))
 
-            if volume_to_mount.volumeSource.secret is not None:
+            if volume_to_mount.secret is not None:
                 original_name = volume_to_mount.secret.name
                 new_name = self.generate_volume_id(original_name, pod.metadata.name, pod.metadata.namespace)
 
