@@ -9,3 +9,7 @@ metadata:
     original-uid: {{ metadata.uid }}
 
 data: {{ data | tojson }}
+
+{% if binaryData is defined %}
+binaryData: {{ binaryData | to json }}
+{% endif %}
