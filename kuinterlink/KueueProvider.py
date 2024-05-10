@@ -42,8 +42,8 @@ class KueueProvider(interlink.provider.Provider):
     @staticmethod
     def generate_volume_id(volume_name: str, pod_name: str, namespace: str):
         """Internal. Return a readable unique id used to name the pod."""
-        uid = str(uuid.uuid4())
-        short_name = '-'.join((namespace[:10], pod_name[:10], volume_name[:10]))[:33]
+        uid = str(uuid.uuid4()).replace("-", "")[:30]
+        short_name = '-'.join((namespace[:10], pod_name[:10], volume_name[:10]))[:32]
         return '-'.join((short_name, uid))
 
     async def create_job(self,  pod: interlink.PodRequest, volumes: Collection[interlink.Volume]) -> str:
@@ -58,17 +58,12 @@ class KueueProvider(interlink.provider.Provider):
             if volume_to_mount.configMap is None and volume_to_mount.secret is None:
                 continue
 
-            original_name = volume_to_mount.name
-            new_name = self.generate_volume_id(
-                volume_to_mount.name,
-                pod.metadata.name,
-                pod.metadata.namespace
-            )
-
-            # Update the name of the volume in the pod manifest
-            volume_to_mount.name = new_name
-
             if volume_to_mount.configMap is not None:
+                original_name = volume_to_mount.configMap.name
+                new_name = self.generate_volume_id(original_name, pod.metadata.name, pod.metadata.namespace)
+
+                # Update the name of the volume in the pod manifest
+                volume_to_mount.configMap.name = new_name
                 for container in volumes:
                     for config_map in container.configMaps:
                         if config_map.metadata.name == original_name:
@@ -81,6 +76,11 @@ class KueueProvider(interlink.provider.Provider):
                                 ))
 
             elif volume_to_mount.volumeSource.secret is not None:
+                original_name = volume_to_mount.secret.name
+                new_name = self.generate_volume_id(original_name, pod.metadata.name, pod.metadata.namespace)
+
+                # Update the name of the volume in the pod manifest
+                volume_to_mount.secret.name = new_name
                 for container in volumes:
                     for secret in container.secrets:
                         if secret.metadata.name == original_name:
