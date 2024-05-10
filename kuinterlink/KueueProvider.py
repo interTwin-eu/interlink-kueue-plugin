@@ -75,11 +75,11 @@ class KueueProvider(interlink.provider.Provider):
                                     ))
 
             if volume_to_mount.secret is not None:
-                original_name = volume_to_mount.secret.name
+                original_name = volume_to_mount.secret.secretName
                 new_name = self.generate_volume_id(original_name, pod.metadata.name, pod.metadata.namespace)
 
                 # Update the name of the volume in the pod manifest
-                volume_to_mount.secret.name = new_name
+                volume_to_mount.secret.secretName = new_name
                 for container in volumes:
                     if container.secrets is not None:
                         for secret in container.secrets:
