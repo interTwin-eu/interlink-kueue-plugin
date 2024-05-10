@@ -69,14 +69,14 @@ spec:
       volumes:
         {% for volume in job.spec.volumes %}
         - name: {{ volume.name }}
-          {% if volume.volumeSource is defined and volume.volumeSource.emptyDir is defined %}
-          emptyDir: {{ volume.volumeSource.emptyDir | tojson }}
+          {% if volume.emptyDir is defined %}
+          emptyDir: {{ volume.emptyDir | tojson }}
           {% endif %}
-          {% if volume.volumeSource is defined and volume.volumeSource.secret is defined %}
-          secret: {{ volume.volumeSource.secret | tojson }}
+          {% if volume.secret is defined %}
+          secret: {{ volume.secret | tojson }}
           {% endif %}
-          {% if volume.volumeSource is defined and volume.volumeSource.configMap is defined %}
-          configMap: {{ volume.volumeSource.configMap | tojson }}
+          {% if volume.configMap is defined %}
+          configMap: {{ volume.configMap | tojson }}
           {% endif %}
 
         {% endfor %}
