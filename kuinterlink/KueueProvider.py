@@ -289,7 +289,8 @@ class KueueProvider(interlink.provider.Provider):
                 )
         except ApiException as e:
             self.logger.error("Kubernetes API returned an error")
-            self.logger.error(traceback.format_exception(e))
+            error_message = traceback.format_exception(e)
+            self.logger.error("\n".join(error_message))
             return None
 
 
@@ -343,6 +344,6 @@ class KueueProvider(interlink.provider.Provider):
                 )
         except ApiException as e:
             error_message = traceback.format_exception(e)
-            self.logger.error(error_message)
-            return error_message
+            self.logger.error("\n".join(error_message))
+            return "\n".join(error_message)
 
