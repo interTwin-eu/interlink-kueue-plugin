@@ -54,8 +54,4 @@ async def shutdown() -> str:
 @app.get("/healthz")
 async def healtz() -> bool:
     logging.debug("Health tested: ok.")
-    # async with kubernetes_api() as k8s:
-    #     ret = await k8s.list_pod_for_all_namespaces()
-    #     logging.debug(ret)
-
     return True

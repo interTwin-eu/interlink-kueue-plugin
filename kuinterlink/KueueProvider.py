@@ -1,4 +1,5 @@
 import uuid
+import traceback
 
 import interlink
 import logging
@@ -8,6 +9,7 @@ from pprint import pformat
 from fastapi import HTTPException
 
 from kubernetes_asyncio.client.models import V1ContainerState, V1Pod
+from kubernetes_asyncio.client.exceptions import ApiException
 from .kubernetes_client import initialize_k8s
 from .kubernetes_client import kubernetes_api
 from .parse_template import parse_template
@@ -270,14 +272,19 @@ class KueueProvider(interlink.provider.Provider):
 
     async def get_pod_status(self, pod: interlink.PodRequest) -> interlink.PodStatus:
         self.logger.info(f"Status of pod {pod.metadata.name}.{pod.metadata.namespace} [{pod.metadata.uid}]")
-        if await self._is_job_suspended(self.get_readable_uid(pod)):
-            return self._pending_job_status(pod)
+        try:
+            if await self._is_job_suspended(self.get_readable_uid(pod)):
+                return self._pending_job_status(pod)
 
-        async with kubernetes_api('core') as k8s:
-            pods = await k8s.list_namespaced_pod(
-                namespace=cfg.NAMESPACE,
-                label_selector=f"job-name={self.get_readable_uid(pod)}"
-            )
+            async with kubernetes_api('core') as k8s:
+                pods = await k8s.list_namespaced_pod(
+                    namespace=cfg.NAMESPACE,
+                    label_selector=f"job-name={self.get_readable_uid(pod)}"
+                )
+        except ApiException as e:
+            self.logger.error(traceback.format_exception(e))
+            return interlink.PodStatus()
+
 
         container_statuses = (sum([p.status.container_statuses for p in pods.items], [])
                               if len(pods.items) > 0 else [])
