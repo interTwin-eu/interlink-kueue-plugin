@@ -57,7 +57,7 @@ spec:
               readOnly: {{ volumeMount.readOnly }}
               {% endif %}
 
-              {% if volumeMount.readOnly %}
+              {% if volumeMount.mountPropagation %}
               mountPropagation: {{ volumeMount.mountPropagation }}
               {% endif %}
 
@@ -103,7 +103,7 @@ spec:
               readOnly: {{ volumeMount.readOnly }}
               {% endif %}
 
-              {% if volumeMount.readOnly %}
+              {% if volumeMount.mountPropagation %}
               mountPropagation: {{ volumeMount.mountPropagation }}
               {% endif %}
 
