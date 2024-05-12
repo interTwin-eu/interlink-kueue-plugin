@@ -306,31 +306,36 @@ class KueueProvider(interlink.provider.Provider):
     async def get_pod_logs(self, log_request: interlink.LogRequest) -> str:
         self.logger.info(f"Log of pod {log_request.PodName}.{log_request.Namespace} [{log_request.PodUID}]")
 
-        if await self._is_job_suspended(self.get_readable_uid(log_request)):
-            return f"Job scheduled in queue `{cfg.QUEUE}`."
+        try:
+            if await self._is_job_suspended(self.get_readable_uid(log_request)):
+                return f"Job scheduled in queue `{cfg.QUEUE}`."
 
-        async with kubernetes_api('core') as k8s:
-            pods = await k8s.list_namespaced_pod(
-                namespace=cfg.NAMESPACE,
-                label_selector=f"job-name={self.get_readable_uid(log_request)}"
-            )
+            async with kubernetes_api('core') as k8s:
+                pods = await k8s.list_namespaced_pod(
+                    namespace=cfg.NAMESPACE,
+                    label_selector=f"job-name={self.get_readable_uid(log_request)}"
+                )
 
-            if len(pods.items) > 1:
-                raise HTTPException(501, "Too many pods for a single job")
+                if len(pods.items) > 1:
+                    raise HTTPException(501, "Too many pods for a single job")
 
-            selected_pod: V1Pod = pods.items[0]
+                selected_pod: V1Pod = pods.items[0]
 
-            if selected_pod.status.phase in ['Pending']:
-                return "Pod execution is scheduled, but still pending."
+                if selected_pod.status.phase in ['Pending']:
+                    return "Pod execution is scheduled, but still pending."
 
-            return await k8s.read_namespaced_pod_log(
-                name=selected_pod.metadata.name,
-                namespace=cfg.NAMESPACE,
-                container=log_request.ContainerName,
-                # tail_lines=log_request.Opts.Tail,
-                # limit_bytes=log_request.Opts.LimitBytes,
-                # timestamps=log_request.Opts.Timestamps,
-                # previous=log_request.Opts.Previous,
-                # since_seconds=log_request.Opts.SinceSeconds,
-            )
+                return await k8s.read_namespaced_pod_log(
+                    name=selected_pod.metadata.name,
+                    namespace=cfg.NAMESPACE,
+                    container=log_request.ContainerName,
+                    # tail_lines=log_request.Opts.Tail,
+                    # limit_bytes=log_request.Opts.LimitBytes,
+                    # timestamps=log_request.Opts.Timestamps,
+                    # previous=log_request.Opts.Previous,
+                    # since_seconds=log_request.Opts.SinceSeconds,
+                )
+        except ApiException as e:
+            error_message = traceback.format_exception(e)
+            self.logger.error(error_message)
+            return error_message
 
