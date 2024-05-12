@@ -276,7 +276,7 @@ class KueueProvider(interlink.provider.Provider):
             ]
         )
 
-    async def get_pod_status(self, pod: interlink.PodRequest) -> interlink.PodStatus:
+    async def get_pod_status(self, pod: interlink.PodRequest) -> Union[interlink.PodStatus, None]:
         self.logger.info(f"Status of pod {pod.metadata.name}.{pod.metadata.namespace} [{pod.metadata.uid}]")
         try:
             if await self._is_job_suspended(self.get_readable_uid(pod)):
@@ -290,7 +290,7 @@ class KueueProvider(interlink.provider.Provider):
         except ApiException as e:
             self.logger.error("Kubernetes API returned an error")
             self.logger.error(traceback.format_exception(e))
-            return interlink.PodStatus()
+            return None
 
 
         container_statuses = (sum([p.status.container_statuses for p in pods.items], [])
