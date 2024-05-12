@@ -145,12 +145,12 @@ class KueueProvider(interlink.provider.Provider):
                 label_selector=f"job-name={self.get_readable_uid(pod)}"
             )
 
-            if len(config_maps) > 0:
+            if len(config_maps.items) > 0:
                 self.logger.info(
                     f"Delete config maps: {', '.join([cm.metadata.labels['original-name'] for cm in config_maps])}"
                 )
 
-            for config_map in config_maps:
+            for config_map in config_maps.items:
                 k8s.delete_namespaced_config_map(
                     name=config_map.metadata.name,
                     namespace=config_maps.metadata.namespace,
@@ -161,12 +161,12 @@ class KueueProvider(interlink.provider.Provider):
                 label_selector=f"job-name={self.get_readable_uid(pod)}"
             )
 
-            if len(secrets) > 0:
+            if len(secrets.items) > 0:
                 self.logger.info(
                     f"Delete secrets: {', '.join([s.metadata.labels['original-name'] for s in secrets])}"
                 )
 
-            for secret in secrets:
+            for secret in secrets.items:
                 k8s.delete_namespaced_config_map(
                     name=secret.metadata.name,
                     namespace=secret.metadata.namespace,
