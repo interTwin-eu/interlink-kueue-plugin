@@ -179,7 +179,7 @@ class KueueProvider(interlink.provider.Provider):
         Return True if the job.spec.suspend is true. If true, kueue scheduled the job.
         """
         async with kubernetes_api('batch') as k8s:
-            job = await k8s.get_namespaced_job(
+            job = await k8s.read_namespaced_job(
                 namespace=cfg.NAMESPACE,
                 name=job_name
             )
