@@ -7,7 +7,7 @@ from typing import Union, Collection
 from pprint import pformat
 from fastapi import HTTPException
 
-from kubernetes_asyncio.client.models import V1ContainerState
+from kubernetes_asyncio.client.models import V1ContainerState, V1Pod
 from .kubernetes_client import initialize_k8s
 from .kubernetes_client import kubernetes_api
 from .parse_template import parse_template
@@ -173,16 +173,49 @@ class KueueProvider(interlink.provider.Provider):
             )
         )
 
+    @staticmethod
+    async def _is_job_suspended(job_name: str) -> bool:
+        """
+        Return True if the job.spec.suspend is true. If true, kueue scheduled the job.
+        """
+        async with kubernetes_api('batch') as k8s:
+            return await k8s.get_namespaced_job(
+                namespace=cfg.NAMESPACE,
+                name=job_name
+            )
+
+    @staticmethod
+    def _pending_job_status(pod: interlink.PodRequest) -> interlink.PodStatus:
+        """
+        Formats a PodStatus indicating the job has not been scheduled, yet.
+        """
+        all_containers = pod.spec.containers
+        if pod.spec.initContainers is not None:
+            all_containers += pod.spec.initContainers
+
+        return interlink.PodStatus(
+            name=pod.metadata.name,
+            UID=pod.metadata.uid,
+            namespace=pod.metadata.namespace,
+            containers=[
+                interlink.ContainerStatus(
+                    name=c.name,
+                    state=interlink.ContainerStates(
+                        waiting=interlink.StateWaiting(
+                            message="Pending",
+                            reason="Execution enqueued.",
+                        ),
+                    )
+                ) for c in all_containers
+            ]
+        )
+
     async def get_pod_status(self, pod: interlink.PodRequest) -> interlink.PodStatus:
         self.logger.info(f"Status of pod {pod.metadata.name}.{pod.metadata.namespace} [{pod.metadata.uid}]")
+        if self._is_job_suspended(self.get_readable_uid(pod)):
+            return self._pending_job_status(pod)
+
         async with kubernetes_api('core') as k8s:
-            # job = await k8s.get_namespaced_custom_object(
-            #     group='batch',
-            #     version='v1',
-            #     namespace=cfg.NAMESPACE,
-            #     plural='jobs',
-            #     name=self.get_readable_uid(pod)
-            # )
             pods = await k8s.list_namespaced_pod(
                 namespace=cfg.NAMESPACE,
                 label_selector=f"job-name={self.get_readable_uid(pod)}"
@@ -206,6 +239,9 @@ class KueueProvider(interlink.provider.Provider):
     async def get_pod_logs(self, log_request: interlink.LogRequest) -> str:
         self.logger.info(f"Log of pod {log_request.PodName}.{log_request.Namespace} [{log_request.PodUID}]")
 
+        if self._is_job_suspended(self.get_readable_uid(log_request)):
+            return f"Job scheduled in queue `{cfg.QUEUE}`."
+
         async with kubernetes_api('core') as k8s:
             pods = await k8s.list_namespaced_pod(
                 namespace=cfg.NAMESPACE,
@@ -215,8 +251,13 @@ class KueueProvider(interlink.provider.Provider):
             if len(pods.items) > 1:
                 raise HTTPException(501, "Too many pods for a single job")
 
+            selected_pod: V1Pod = pods.items[0]
+
+            if selected_pod.status.phase in ['Pending']:
+                return "Pod execution is scheduled, but still pending."
+
             return await k8s.read_namespaced_pod_log(
-                name=pods.items[0].metadata.name,
+                name=selected_pod.metadata.name,
                 namespace=cfg.NAMESPACE,
                 container=log_request.ContainerName,
                 # tail_lines=log_request.Opts.Tail,

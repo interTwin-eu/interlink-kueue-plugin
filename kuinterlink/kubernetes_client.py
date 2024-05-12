@@ -11,7 +11,8 @@ from fastapi import HTTPException
 
 __API_GROUPS__ = dict(
     core=k8s.client.CoreV1Api,
-    custom_object=k8s.client.CustomObjectsApi
+    custom_object=k8s.client.CustomObjectsApi,
+    batch = k8s.client.BatchV1Api,
 )
 
 ApiGroup = Literal['core', 'custom_object']
