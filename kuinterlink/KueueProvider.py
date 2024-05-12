@@ -154,7 +154,7 @@ class KueueProvider(interlink.provider.Provider):
             for config_map in config_maps:
                 k8s.delete_namespaced_config_map(
                     name=config_map.metadata.name,
-                    namespace=config_maps.metadata.namespace,
+                    namespace=config_map.metadata.namespace,
                 )
 
             secrets = await k8s.list_namespaced_secrets(
