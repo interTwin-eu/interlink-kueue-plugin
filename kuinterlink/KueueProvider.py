@@ -152,7 +152,7 @@ class KueueProvider(interlink.provider.Provider):
         if container_state.running is not None:
             return interlink.ContainerStates(
                 running=interlink.StateRunning(
-                    startedAt=container_state.running.started_at,
+                    startedAt=str(container_state.running.started_at),
                 )
             )
 
