@@ -157,7 +157,7 @@ class KueueProvider(interlink.provider.Provider):
                     namespace=config_map.metadata.namespace,
                 )
 
-            secrets = await k8s.list_namespaced_secrets(
+            secrets = await k8s.list_namespaced_secret(
                 namespace=cfg.NAMESPACE,
                 label_selector=f"job-name={self.get_readable_uid(pod)}"
             )
