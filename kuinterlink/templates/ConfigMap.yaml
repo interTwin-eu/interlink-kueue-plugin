@@ -7,6 +7,7 @@ metadata:
     original-name: {{ metadata.name }}
     original-namespace: {{ metadata.namespace }}
     original-uid: {{ metadata.uid }}
+    job-name: {{ job_name }}
 
 data: {{ data | tojson }}
 

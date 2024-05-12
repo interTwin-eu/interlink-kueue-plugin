@@ -72,6 +72,7 @@ class KueueProvider(interlink.provider.Provider):
                                         **config_map.dict(exclude_none=True),
                                         name=new_name,
                                         namespace=cfg.NAMESPACE,
+                                        job_name=self.get_readable_uid(pod),
                                     ))
 
             if volume_to_mount.secret is not None:
@@ -90,6 +91,7 @@ class KueueProvider(interlink.provider.Provider):
                                         **secret.dict(exclude_none=True),
                                         name=new_name,
                                         namespace=cfg.NAMESPACE,
+                                        job_name=self.get_readable_uid(pod),
                                     ))
 
         job_desc = pod.dict(exclude_none=True)
@@ -137,6 +139,38 @@ class KueueProvider(interlink.provider.Provider):
                 name=self.get_readable_uid(pod)
             )
 
+        async with kubernetes_api('core') as k8s:
+            config_maps = await k8s.list_namespaced_config_map(
+                namespace=cfg.NAMESPACE,
+                label_selector=f"job-name={self.get_readable_uid(pod)}"
+            )
+
+            if len(config_maps) > 0:
+                self.logger.info(
+                    f"Delete config maps: {', '.join([cm.metadata.labels['original-name'] for cm in config_maps])}"
+                )
+
+            for config_map in config_maps:
+                k8s.delete_namespaced_config_map(
+                    name=config_map.metadata.name,
+                    namespace=config_maps.metadata.namespace,
+                )
+
+            secrets = await k8s.list_namespaced_secrets(
+                namespace=cfg.NAMESPACE,
+                label_selector=f"job-name={self.get_readable_uid(pod)}"
+            )
+
+            if len(secrets) > 0:
+                self.logger.info(
+                    f"Delete secrets: {', '.join([s.metadata.labels['original-name'] for s in secrets])}"
+                )
+
+            for secret in secrets:
+                k8s.delete_namespaced_config_map(
+                    name=secret.metadata.name,
+                    namespace=secret.metadata.namespace,
+                )
 
     @staticmethod
     def create_container_states(container_state: V1ContainerState) -> interlink.ContainerStates:
