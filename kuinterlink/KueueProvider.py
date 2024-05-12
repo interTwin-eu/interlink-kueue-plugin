@@ -218,7 +218,7 @@ class KueueProvider(interlink.provider.Provider):
 
     async def get_pod_status(self, pod: interlink.PodRequest) -> interlink.PodStatus:
         self.logger.info(f"Status of pod {pod.metadata.name}.{pod.metadata.namespace} [{pod.metadata.uid}]")
-        if self._is_job_suspended(self.get_readable_uid(pod)):
+        if await self._is_job_suspended(self.get_readable_uid(pod)):
             return self._pending_job_status(pod)
 
         async with kubernetes_api('core') as k8s:
@@ -245,7 +245,7 @@ class KueueProvider(interlink.provider.Provider):
     async def get_pod_logs(self, log_request: interlink.LogRequest) -> str:
         self.logger.info(f"Log of pod {log_request.PodName}.{log_request.Namespace} [{log_request.PodUID}]")
 
-        if self._is_job_suspended(self.get_readable_uid(log_request)):
+        if await self._is_job_suspended(self.get_readable_uid(log_request)):
             return f"Job scheduled in queue `{cfg.QUEUE}`."
 
         async with kubernetes_api('core') as k8s:
