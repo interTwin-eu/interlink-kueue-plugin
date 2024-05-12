@@ -131,66 +131,72 @@ class KueueProvider(interlink.provider.Provider):
         return "ok"
 
     async def delete_pod(self, pod: interlink.PodRequest) -> None:
-        async with kubernetes_api('custom_object') as k8s:
-            await k8s.delete_namespaced_custom_object(
-                group="batch",
-                version="v1",
-                namespace=cfg.NAMESPACE,
-                plural='jobs',
-                name=self.get_readable_uid(pod)
-            )
-
-        async with kubernetes_api('core') as k8s:
-            pods = await k8s.list_namespaced_pod(
-                namespace=cfg.NAMESPACE,
-                label_selector=f"job-name={self.get_readable_uid(pod)}"
-            )
-            pods = pods.items
-
-            if len(pods) > 0:
-                self.logger.info(
-                    f"Delete pods: {', '.join([p.metadata.name for p in pods])}"
+        try:
+            async with kubernetes_api('custom_object', ignored_statuses=[404]) as k8s:
+                await k8s.delete_namespaced_custom_object(
+                    group="batch",
+                    version="v1",
+                    namespace=cfg.NAMESPACE,
+                    plural='jobs',
+                    name=self.get_readable_uid(pod)
                 )
+        except ApiException:
+            pass
 
-            for pod_ in pods:
-                await k8s.delete_namespaced_pod(
-                    name=pod_.metadata.name,
-                    namespace=pod_.metadata.namespace,
+        try:
+            async with kubernetes_api('core', ignored_statuses=[404]) as k8s:
+                pods = await k8s.list_namespaced_pod(
+                    namespace=cfg.NAMESPACE,
+                    label_selector=f"job-name={self.get_readable_uid(pod)}"
                 )
+                pods = pods.items
 
-            config_maps = await k8s.list_namespaced_config_map(
-                namespace=cfg.NAMESPACE,
-                label_selector=f"job-name={self.get_readable_uid(pod)}"
-            )
-            config_maps = config_maps.items
+                if len(pods) > 0:
+                    self.logger.info(
+                        f"Delete pods: {', '.join([p.metadata.name for p in pods])}"
+                    )
 
-            if len(config_maps) > 0:
-                self.logger.info(
-                    f"Delete config maps: {', '.join([cm.metadata.labels['original-name'] for cm in config_maps])}"
+                for pod_ in pods:
+                    await k8s.delete_namespaced_pod(
+                        name=pod_.metadata.name,
+                        namespace=pod_.metadata.namespace,
+                    )
+
+                config_maps = await k8s.list_namespaced_config_map(
+                    namespace=cfg.NAMESPACE,
+                    label_selector=f"job-name={self.get_readable_uid(pod)}"
                 )
+                config_maps = config_maps.items
 
-            for config_map in config_maps:
-                await k8s.delete_namespaced_config_map(
-                    name=config_map.metadata.name,
-                    namespace=config_map.metadata.namespace,
+                if len(config_maps) > 0:
+                    self.logger.info(
+                        f"Delete config maps: {', '.join([cm.metadata.labels['original-name'] for cm in config_maps])}"
+                    )
+
+                for config_map in config_maps:
+                    await k8s.delete_namespaced_config_map(
+                        name=config_map.metadata.name,
+                        namespace=config_map.metadata.namespace,
+                    )
+
+                secrets = await k8s.list_namespaced_secret(
+                    namespace=cfg.NAMESPACE,
+                    label_selector=f"job-name={self.get_readable_uid(pod)}"
                 )
+                secrets = secrets.items
 
-            secrets = await k8s.list_namespaced_secret(
-                namespace=cfg.NAMESPACE,
-                label_selector=f"job-name={self.get_readable_uid(pod)}"
-            )
-            secrets = secrets.items
+                if len(secrets) > 0:
+                    self.logger.info(
+                        f"Delete secrets: {', '.join([s.metadata.labels['original-name'] for s in secrets])}"
+                    )
 
-            if len(secrets) > 0:
-                self.logger.info(
-                    f"Delete secrets: {', '.join([s.metadata.labels['original-name'] for s in secrets])}"
-                )
-
-            for secret in secrets:
-                await k8s.delete_namespaced_secret(
-                    name=secret.metadata.name,
-                    namespace=secret.metadata.namespace,
-                )
+                for secret in secrets:
+                    await k8s.delete_namespaced_secret(
+                        name=secret.metadata.name,
+                        namespace=secret.metadata.namespace,
+                    )
+        except ApiException:
+            pass
 
     @staticmethod
     def create_container_states(container_state: V1ContainerState) -> interlink.ContainerStates:
@@ -232,7 +238,7 @@ class KueueProvider(interlink.provider.Provider):
         """
         Return True if the job.spec.suspend is true. If true, kueue scheduled the job.
         """
-        async with kubernetes_api('batch') as k8s:
+        async with kubernetes_api('batch', ignored_statuses=[404]) as k8s:
             job = await k8s.read_namespaced_job(
                 namespace=cfg.NAMESPACE,
                 name=job_name
@@ -276,7 +282,7 @@ class KueueProvider(interlink.provider.Provider):
             if await self._is_job_suspended(self.get_readable_uid(pod)):
                 return self._pending_job_status(pod)
 
-            async with kubernetes_api('core') as k8s:
+            async with kubernetes_api('core', ignored_statuses=[404]) as k8s:
                 pods = await k8s.list_namespaced_pod(
                     namespace=cfg.NAMESPACE,
                     label_selector=f"job-name={self.get_readable_uid(pod)}"
@@ -311,7 +317,7 @@ class KueueProvider(interlink.provider.Provider):
             if await self._is_job_suspended(self.get_readable_uid(log_request)):
                 return f"Job scheduled in queue `{cfg.QUEUE}`."
 
-            async with kubernetes_api('core') as k8s:
+            async with kubernetes_api('core', ignored_statuses=[404]) as k8s:
                 pods = await k8s.list_namespaced_pod(
                     namespace=cfg.NAMESPACE,
                     label_selector=f"job-name={self.get_readable_uid(log_request)}"
