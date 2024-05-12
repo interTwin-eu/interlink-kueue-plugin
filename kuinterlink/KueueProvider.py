@@ -147,13 +147,13 @@ class KueueProvider(interlink.provider.Provider):
 
             if len(pods) > 0:
                 self.logger.info(
-                    f"Delete pods: {', '.join([pod.metadata.name for pod in pods])}"
+                    f"Delete pods: {', '.join([p.metadata.name for p in pods])}"
                 )
 
-            for pod in pods:
+            for pod_ in pods:
                 await k8s.delete_namespaced_config_map(
-                    name=pod.metadata.name,
-                    namespace=pod.metadata.namespace,
+                    name=pod_.metadata.name,
+                    namespace=pod_.metadata.namespace,
                 )
 
             config_maps = await k8s.list_namespaced_config_map(
