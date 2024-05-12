@@ -151,7 +151,7 @@ class KueueProvider(interlink.provider.Provider):
                 )
 
             for pod_ in pods:
-                await k8s.delete_namespaced_config_map(
+                await k8s.delete_namespaced_pod(
                     name=pod_.metadata.name,
                     namespace=pod_.metadata.namespace,
                 )
