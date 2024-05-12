@@ -129,7 +129,6 @@ class KueueProvider(interlink.provider.Provider):
         return "ok"
 
     async def delete_pod(self, pod: interlink.PodRequest) -> None:
-        # TODO: Delete related volumes (ConfigMaps and Secrets!)
         async with kubernetes_api('custom_object') as k8s:
             await k8s.delete_namespaced_custom_object(
                 group="batch",
@@ -140,6 +139,23 @@ class KueueProvider(interlink.provider.Provider):
             )
 
         async with kubernetes_api('core') as k8s:
+            pods = await k8s.list_namespaced_pod(
+                namespace=cfg.NAMESPACE,
+                label_selector=f"job-name={self.get_readable_uid(pod)}"
+            )
+            pods = pods.items
+
+            if len(pods) > 0:
+                self.logger.info(
+                    f"Delete pods: {', '.join([pod.metadata.name for pod in pods])}"
+                )
+
+            for pod in pods:
+                await k8s.delete_namespaced_config_map(
+                    name=pod.metadata.name,
+                    namespace=pod.metadata.namespace,
+                )
+
             config_maps = await k8s.list_namespaced_config_map(
                 namespace=cfg.NAMESPACE,
                 label_selector=f"job-name={self.get_readable_uid(pod)}"
