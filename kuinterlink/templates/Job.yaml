@@ -53,6 +53,14 @@ spec:
               subPath: {{ volumeMount.subPath }}
               {% endif %}
 
+              {% if volumeMount.readOnly %}
+              readOnly: {{ volumeMount.readOnly }}
+              {% endif %}
+
+              {% if volumeMount.readOnly %}
+              mountPropagation: {{ volumeMount.mountPropagation }}
+              {% endif %}
+
             {% endfor %}
           {% endif %}
         {% endfor %}
