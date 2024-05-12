@@ -184,6 +184,10 @@ class KueueProvider(interlink.provider.Provider):
                 name=job_name
             )
 
+            logging.getLogger("is_job_suspended").debug(
+                f"job.spec.suspend: {job.spec.suspend}, ({job.spec.suspend == True})"
+            )
+
             return job.spec.suspend
 
     @staticmethod
