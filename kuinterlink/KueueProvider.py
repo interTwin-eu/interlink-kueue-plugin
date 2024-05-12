@@ -282,6 +282,7 @@ class KueueProvider(interlink.provider.Provider):
                     label_selector=f"job-name={self.get_readable_uid(pod)}"
                 )
         except ApiException as e:
+            self.logger.error("Kubernetes API returned an error")
             self.logger.error(traceback.format_exception(e))
             return interlink.PodStatus()
 
