@@ -185,7 +185,7 @@ class KueueProvider(interlink.provider.Provider):
             )
 
             logging.getLogger("is_job_suspended").debug(
-                f"job.spec.suspend: {job.spec.suspend}, ({job.spec.suspend == True})"
+                f"job.spec.suspend: {job.spec.suspend} (boolean: {job.spec.suspend == True})"
             )
 
             return job.spec.suspend
@@ -209,7 +209,7 @@ class KueueProvider(interlink.provider.Provider):
                     state=interlink.ContainerStates(
                         waiting=interlink.StateWaiting(
                             message="Pending",
-                            reason="Execution enqueued.",
+                            reason="Execution enqueued",
                         ),
                     )
                 ) for c in all_containers
@@ -229,6 +229,8 @@ class KueueProvider(interlink.provider.Provider):
 
         container_statuses = (sum([p.status.container_statuses for p in pods.items], [])
                               if len(pods.items) > 0 else [])
+
+        self.logger.debug(f"Container statuses: " + pformat(container_statuses))
 
         return interlink.PodStatus(
             name=pod.metadata.name,
