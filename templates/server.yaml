@@ -1,15 +1,4 @@
 ################################################################################
-## Namespaces
-
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: {{ .Release.Namespace }}
-
----
-
-
-################################################################################
 ## InterLink API server
 
 apiVersion: v1
@@ -40,16 +29,15 @@ data:
     upstream interlink_api {
       server localhost:{{- .Values.serverPort | default "30080" -}};
     }
-    
     server {
       listen 80;
       server_name {{ .Values.hostname }};
       client_max_body_size 20M;
-      
       location /{{- .Values.serverPathPrefix | default "interlink" -}}/ {
         proxy_pass http://interlink_api/;
       }
     }
+
 
 ---
 
@@ -177,25 +165,25 @@ spec:
           command: ["oauth2-proxy"]
           args: 
             - --email-domain=*
-            - --client-id={{- .Values.iamClientId | required "missing IAM Client ID" -}}
-            - --client-secret={{- .Values.iamClientSecret | required "missing IAM Client Secret" -}}
-            - --http-address=0.0.0.0:{{- .Values.oauth2ProxyPort | default 8000 -}}
-            - --oidc-issuer-url={{- .Values.oauth2ProxyIamIssuer | default "https://iam.cloud.infn.it/" -}}
+            - --client-id={{- .Values.iamClientId | required "missing IAM Client ID" }}
+            - --client-secret={{- .Values.iamClientSecret | required "missing IAM Client Secret" }}
+            - --http-address=0.0.0.0:{{- .Values.oauth2ProxyPort | default 8000 }}
+            - --oidc-issuer-url={{- .Values.oauth2ProxyIamIssuer | default "https://iam.cloud.infn.it/" }}
             - --pass-authorization-header=true
             - --provider=oidc
             - --scope={{ join " " .Values.iamScopes }}
             - --oidc-groups-claim={{ .Values.iamGroupsClaim | default "groups" }}
-            - --redirect-url=https://{{- .Values.hostname | required "Field `hostname` not defined." -}}/{{ .Values.serverPathPrefix | default "interlink" }}/callback
-            - --oidc-extra-audience={{- .Values.oauth2ProxyAudience | default "users" -}}
+            - --redirect-url=https://{{- .Values.hostname | required "Field `hostname` not defined." -}}/{{ .Values.serverPathPrefix | default "interlink" -}}/callback
+            - --oidc-extra-audience={{- .Values.oauth2ProxyAudience | default "users" }}
             - --upstream=http://interlink.{{- .Release.Namespace -}}:80
-            - --allowed-group={{- .Values.iamAllowedGroup -}}
-            - --validate-url={{- .Values.oauth2ProxyTokenUrl | default "https://iam.cloud.infn.it/token" -}}
-            - --cookie-secret={{- .Values.oauth2ProxyCookieSecret | required "Field `oauth2ProxyCookieSecret` not defined." | b64enc -}}
+            - --allowed-group={{- .Values.iamAllowedGroup }}
+            - --validate-url={{- .Values.oauth2ProxyTokenUrl | default "https://iam.cloud.infn.it/token" }}
+            - --cookie-secret={{- .Values.oauth2ProxyCookieSecret | required "Field `oauth2ProxyCookieSecret` not defined." | b64enc }}
             - --skip-auth-route="*='*'"
             - --skip-jwt-bearer-tokens=true 
-            - --proxy-prefix=/{{- .Values.serverPathPrefix -}}
+            - --proxy-prefix=/{{- .Values.serverPathPrefix }}
           ports:
-            - containerPort: {{- .Values.oauth2ProxyPort | default 8000 -}}
+            - containerPort: {{ .Values.oauth2ProxyPort | default 8000 }}
 
 ---
 
@@ -212,7 +200,7 @@ spec:
     - protocol: TCP
       name: http
       port: 80
-      targetPort: {{- .Values.oauth2ProxyPort | default 8000 -}}
+      targetPort: {{ .Values.oauth2ProxyPort | default 8000 }}
 
 ---
 
@@ -235,7 +223,7 @@ spec:
             name: interlink-oidc
             port:
               name: http
-      path: /{{- .Values.serverPathPrefix -}}
+        path: /{{- .Values.serverPathPrefix }}
         pathType: Prefix
 
   {{ if .Values.certManagerEnabled }}
