@@ -14,6 +14,7 @@ metadata:
 spec:
   parallelism: 1
   completions: 1
+  backoffLimit: 0
   suspend: true
   template:
     spec:
@@ -25,18 +26,41 @@ spec:
           image: {{ container.image }}
           tag: {{ container.tag }}
           command: {{ container.command | tojson }}
+
+          {% if container.args is defined %}
           args: {{ container.args | tojson }}
+          {% endif %}
+
+          {% if container.securityContext is defined %}
+          securityContext: {{ container.securityContext | tojson }}
+          {% endif %}
+
           {% if container.resources is defined %}
           resources: {{ container.resources | tojson }}
           {% endif %}
+
+          {% if container.env is defined %}
+          env: {{ container.env | tojson }}
+          {% endif %}
+
           {% if 'volumeMounts' in container and container.volumeMounts %}
           volumeMounts:
             {% for volumeMount in container.volumeMounts %}
             - name: {{ volumeMount.name }}
               mountPath: {{ volumeMount.mountPath }}
+
               {% if volumeMount.subPath %}
               subPath: {{ volumeMount.subPath }}
               {% endif %}
+
+              {% if volumeMount.readOnly %}
+              readOnly: {{ volumeMount.readOnly }}
+              {% endif %}
+
+              {% if volumeMount.mountPropagation %}
+              mountPropagation: {{ volumeMount.mountPropagation }}
+              {% endif %}
+
             {% endfor %}
           {% endif %}
         {% endfor %}
@@ -48,18 +72,41 @@ spec:
           image: {{ container.image }}
           tag: {{ container.tag }}
           command: {{ container.command | tojson }}
+
+          {% if container.securityContext is defined %}
+          securityContext: {{ container.securityContext | tojson }}
+          {% endif %}
+
+          {% if container.args is defined %}
           args: {{ container.args | tojson }}
+          {% endif %}
+
           {% if container.resources is defined %}
           resources: {{ container.resources | tojson }}
           {% endif %}
+
+          {% if container.env is defined %}
+          env: {{ container.env | tojson }}
+          {% endif %}
+
           {% if 'volumeMounts' in container and container.volumeMounts %}
           volumeMounts:
             {% for volumeMount in container.volumeMounts %}
             - name: {{ volumeMount.name }}
               mountPath: {{ volumeMount.mountPath }}
+
               {% if volumeMount.subPath %}
               subPath: {{ volumeMount.subPath }}
               {% endif %}
+
+              {% if volumeMount.readOnly %}
+              readOnly: {{ volumeMount.readOnly }}
+              {% endif %}
+
+              {% if volumeMount.mountPropagation %}
+              mountPropagation: {{ volumeMount.mountPropagation }}
+              {% endif %}
+
             {% endfor %}
           {% endif %}
         {% endfor %}
@@ -68,14 +115,14 @@ spec:
       volumes:
         {% for volume in job.spec.volumes %}
         - name: {{ volume.name }}
-          {% if volume.volumeSource is defined and volume.volumeSource.emptyDir is defined %}
-          emptyDir: {{ volume.volumeSource.emptyDir | tojson }}
+          {% if volume.emptyDir is defined %}
+          emptyDir: {{ volume.emptyDir | tojson }}
           {% endif %}
-          {% if volume.volumeSource is defined and volume.volumeSource.secret is defined %}
-          secret: {{ volume.volumeSource.secret | tojson }}
+          {% if volume.secret is defined %}
+          secret: {{ volume.secret | tojson }}
           {% endif %}
-          {% if volume.volumeSource is defined and volume.volumeSource.configMap is defined %}
-          configMap: {{ volume.volumeSource.configMap | tojson }}
+          {% if volume.configMap is defined %}
+          configMap: {{ volume.configMap | tojson }}
           {% endif %}
 
         {% endfor %}

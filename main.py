@@ -37,7 +37,8 @@ async def delete_pod(pod: interlink.PodRequest) -> str:
 @app.get("/status")
 async def get_pod_status(pods: List[interlink.PodRequest]) -> List[interlink.PodStatus]:
     logging.info(f"Requested status, number of pods: {len(pods)}")
-    return [await kueue_provider.get_pod_status(pod) for pod in pods]
+    retrieved_states = [await kueue_provider.get_pod_status(pod) for pod in pods]
+    return [state for state in retrieved_states if state is not None]
 
 
 @app.get("/getLogs")
@@ -54,8 +55,4 @@ async def shutdown() -> str:
 @app.get("/healthz")
 async def healtz() -> bool:
     logging.debug("Health tested: ok.")
-    # async with kubernetes_api() as k8s:
-    #     ret = await k8s.list_pod_for_all_namespaces()
-    #     logging.debug(ret)
-
     return True

@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ name }}
+  namespace: {{ namespace }}
+  labels:
+    original-name: {{ metadata.name }}
+    original-namespace: {{ metadata.namespace }}
+    original-uid: {{ metadata.uid }}
+    job-name: {{ job_name }}
+
+data: {{ data | tojson }}
+
+{% if binaryData is defined %}
+binaryData: {{ binaryData | tojson }}
+{% endif %}
