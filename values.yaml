@@ -1,0 +1,126 @@
+# Deployment hostname with full domain, but without protocol
+hostname: 
+ 
+
+################################################################################
+# InterLink configuration
+
+# serverVersion is the version of the interlink release to retrieve from GitHub
+serverVersion: 0.2.3-pre7
+
+# serverPort is the internal port number to access the interLink server
+serverPort: 30080
+
+# sidecarName is the name of the service used to access the sidecar 
+sidecarName: kueue-plugin
+
+# sidecarPort is the exposed port of the sidecar
+sidecarPort: 80
+
+# serverVerboseLogging if true enhance verbosity of the server
+serverVerboseLogging: true
+
+# serverErrorsOnlyLogging if true reduces the verbosity of the server
+serverErrorsOnlyLogging: false
+
+# serverExportPodData
+serverExportPodData: true
+
+  
+################################################################################
+# Ingress configuration
+
+# serverPathPrefix is the reverse-proxy path prefix to reach server. WITHOUT SLASHES.
+serverPathPrefix: interlink
+
+# certManagerEnabled if true, setup a certmanager for TLS termination
+# IMPORTANT!!! Disable it if installing the chart in a already certified cluster
+certManagerEnabled: true
+
+
+# certManagerEmailAddress is the email address of the certificate owner
+certManagerEmailAddress: 
+ 
+
+################################################################################
+# Authentication configuration
+
+# oauth2ProxyImage is the docker image of the oauth2-proxy service
+oauth2ProxyImage: "quay.io/oauth2-proxy/oauth2-proxy:v7.6.0"
+
+# iamClientId is the Client ID of the IAM OIDC token issuer
+iamClientId: 
+
+# iamClientSecret is the Client Secret of the IAM OIDC token issuer
+iamClientSecret: 
+
+# iamScopes lists the scopes requested to the IAM
+iamScopes:
+   - openid 
+   - email 
+   - offline_access 
+   - profile 
+   - groups
+
+
+# oauth2ProxyPort is the internal port of the oauth2-proxy service
+oauth2ProxyPort: 8000
+
+# oauth2ProxyIamIssuer is the path to the IAM issuer passed to the oauth2-proxy
+oauth2ProxyIamIssuer: "https://iam.cloud.infn.it/"
+
+# oauth2ProxyTokenUrl is the path to the IAM issuer passed to the oauth2-proxy
+oauth2ProxyTokenUrl: "https://iam.cloud.infn.it/token"
+
+# iamGroupClaim is the json path in the returned token to retrieve the user's groups
+iamGroupClaim: groups
+
+# iamAllowedGroup is the IAM group whose user can access the interlink server
+iamAllowedGroup: admins
+
+# oauth2ProxyAudience is the audience in the token. Should be consistent with client setup
+oauth2ProxyAudience: users
+ 
+# oauth2ProxyCookieSecret is a random string used to encrypt the cookies
+oauth2ProxyCookieSecret: 
+ 
+################################################################################
+# Plugin configuration
+
+# pluginRepository is the git repository of the plugin, kept updated with git-sync
+pluginRepository: "https://github.com/landerlini/interlink-kueue-plugin"
+
+# pluginSpecRepository is the repository where the reduced k8s apis are defined
+pluginSpecRepository: "git+https://github.com/landerlini/interLink.git#egg=interlink&subdirectory=example"
+
+# pluginLivenessInitialDelaySeconds is the initial delay before prompting the plugin healthz.
+pluginLivenessInitialDelaySeconds: 2
+ 
+# pluginLivenessProbePeriodSeconds is the period ot ping to healtz 
+pluginLivenessProbePeriodSeconds: 10
+
+# pluginGitSyncPeriod is the frequency of the polling to git repository for updates
+# As a rule of thumb, you can use a large value in production and shorten it for 
+# faster turn-over while debugging. 
+pluginGitSyncPeriod: 10s
+
+# pluginLogLevel is the log level of uvicorn 
+# see https://www.uvicorn.org/settings/#logging
+pluginLogLevel: info
+ 
+################################################################################
+# Kueue configuration
+
+# jobsNamespace is the namespace where the interlink jobs are run
+jobsNamespace: ikjobs
+
+# totalCpuQuota is the amount of CPU provisioned exclusively via interLink
+totalCpuQuota: 0
+
+# totalMemoryQuota is the amount of memory provisioned exclusively via interLink
+totalMemoryQuota: 0
+
+# totalGpuQuota is the amount of nvidia.com/gpu provisioned exclusively via interLink
+totalGpuQuota: 0
+
+

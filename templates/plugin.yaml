@@ -1,0 +1,241 @@
+################################################################################
+## Container plugin
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kueue-plugin
+  namespace: ilnk
+  labels:
+    app: interlink
+    component: kueue-plugin
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: interlink
+      component: kueue-plugin
+  template:
+    metadata:
+      labels:
+        app: interlink
+        component: kueue-plugin
+    spec:
+      serviceAccount: kueue-plugin
+      securityContext:
+        # Copy-pasted from https://github.com/kubernetes/git-sync/blob/master/docs/kubernetes.md
+        fsGroup: 101
+
+      containers:
+        - name: git-sync
+          image: registry.k8s.io/git-sync/git-sync:v4.0.0
+          args: 
+            - --repo={{ .Values.pluginRepository | default "https://github.com/landerlini/interlink-kueue-plugin" }}
+            - --period={{ .Values.pluginGitSyncPeriod | default "5s" }}
+            - --link=current
+            - --root=/interlink
+            - --webhook-url=http://localhost:8000/shutdown
+
+          volumeMounts:
+            - name: interlink
+              mountPath: /interlink
+
+        - name: interlink
+          image: landerlini/fastinterlink:v0.0e
+          command: ["/bin/sh", "-c"]
+          args: 
+            - |
+              python3 -m pip install --no-deps --force-reinstall \
+                {{ .Values.pluginSpecRepository | default "git+https://github.com/landerlini/interLink.git#egg=interlink&subdirectory=example" | quote}}
+              cd /interlink/current
+              python3 -m uvicorn main:app --reload --host 0.0.0.0 --log-level={{ .Values.pluginLogLevel | default "info" }} --port 8000
+
+          ports:
+            - containerPort: 8000
+
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8000
+            initialDelaySeconds: {{ .Values.pluginLivenessInitialDelaySeconds | default 3  }} 
+            periodSeconds: {{ .Values.pluginLivenessProbePeriodSeconds | default 3  }}
+
+
+          volumeMounts:
+            - name: interlink
+              mountPath: /interlink
+              readOnly: true
+
+      volumes:
+        - name: interlink
+          emptyDir:
+            sizeLimit: 1Gi
+
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: kueue-plugin
+  namespace: ilnk
+spec:
+  selector:
+    app: interlink
+    component: kueue-plugin
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8000
+
+
+---
+
+################################################################################
+## Roles and authentication
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app: interlink
+    component: kueue-plugin
+  name: kueue-plugin
+
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  - pods/log
+  verbs:
+  - get
+  - watch
+  - list
+  - delete
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  verbs:
+  - create
+  - delete
+  - list
+- apiGroups:
+  - "batch"
+  resources:
+  - jobs
+  verbs:
+  - get
+  - watch
+  - list
+  - delete
+  - create
+
+- apiGroups:
+  - "scheduling.k8s.io"
+  resources:
+  - priorityclasses
+  verbs:
+  - get
+  - watch
+  - list
+#  - patch
+#  - delete
+#  - create
+
+- apiGroups:
+  - "kueue.x-k8s.io"
+  resources:
+  - workloads
+  - localqueues
+  - clusterqueues
+  - resourceflavors
+  verbs:
+  - get
+  - patch
+  - watch
+  - list
+#  - create
+#  - delete
+#  - update
+
+---
+
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+    name: kueue-plugin
+    namespace: {{ .Release.Namespace }}
+
+---
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    app: interlink
+    component: kueue-plugin
+  name: kueue-plugin
+  namespace: {{ .Release.Namespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: kueue-plugin
+subjects:
+  - kind: ServiceAccount
+    name: kueue-plugin
+    namespace: {{ .Release.Namespace }}
+
+---
+
+apiVersion: kueue.x-k8s.io/v1beta1
+kind: ClusterQueue
+metadata:
+  name: interlink
+spec:
+  cohort: interlink
+  flavorFungibility:
+    whenCanBorrow: Borrow
+    whenCanPreempt: TryNextFlavor
+  namespaceSelector: {}
+  preemption:
+    reclaimWithinCohort: Never
+    withinClusterQueue: Never
+  queueingStrategy: BestEffortFIFO
+  resourceGroups:
+  - coveredResources:
+    - cpu
+    - memory
+    - nvidia.com/gpu
+    flavors:
+    - name: cpu-only
+      resources:
+      - name: cpu
+        nominalQuota: {{ .Values.totalCpuQuota }}
+      - name: memory
+        nominalQuota:  {{ .Values.totalMemoryQuota }}
+      - name: nvidia.com/gpu
+        nominalQuota: {{ .Values.totalGpuQuota }} 
+
+---
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ .Values.jobsNamespace }}
+
+---
+
+apiVersion: kueue.x-k8s.io/v1beta1
+kind: LocalQueue
+metadata:
+  namespace: {{ .Values.jobsNamespace }}
+  name: interlink
+spec:
+  clusterQueue: interlink
+
+
+
+

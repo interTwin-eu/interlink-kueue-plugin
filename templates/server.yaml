@@ -1,0 +1,249 @@
+################################################################################
+## Namespaces
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ .Release.Namespace }}
+
+---
+
+
+################################################################################
+## InterLink API server
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: interlink-config
+  namespace: {{ .Release.Namespace }}
+data:
+  interlinkconfig.yaml: |
+    InterlinkURL: "http://localhost"
+    InterlinkPort: {{ .Values.serverPort | default 30080 | quote }}
+    SidecarURL: "http://{{ .Values.sidecarName | default "kueue-plugin" }}.{{ .Release.Namespace }}"
+    SidecarPort: {{ .Values.sidecarPort | quote | default "80" }}
+    VerboseLogging: {{ .Values.serverVerboseLogging | default true }}
+    ErrorsOnlyLogging: {{ .Values.serverErrorsOnlyLogging | default false }}
+    ExportPodData: {{ .Values.serverExportPodData | default true }}
+    DataRootFolder: "~/.interlink"
+
+---
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: rproxy-config
+  namespace: {{ .Release.Namespace }}
+data:
+  interlink.conf: |
+    upstream interlink_api {
+      server localhost:{{- .Values.serverPort | default "30080" -}};
+    }
+    
+    server {
+      listen 80;
+      server_name {{ .Values.hostname }};
+      client_max_body_size 20M;
+      
+      location /{{- .Values.serverPathPrefix | default "interlink" -}}/ {
+        proxy_pass http://interlink_api/;
+      }
+    }
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: interlink-server
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: interlink
+    component: server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: interlink
+      component: server
+  template:
+    metadata:
+      labels:
+        app: interlink
+        component: server
+    spec:
+      initContainers:
+        - name: download-interlink
+          image: radial/busyboxplus:curl
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              mkdir -p /interlink/bin
+              curl --fail -k -L -o /interlink/bin/interlink https://github.com/interTwin-eu/interLink/releases/download/{{- .Values.serverVersion -}}/interlink_$(uname -s)_$(uname -m) 
+              chmod +x /interlink/bin/interlink
+          
+          volumeMounts: 
+            - name: interlink
+              mountPath: /interlink
+                  
+    
+      containers:
+        - name: reverse-proxy
+          image: nginx:latest
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: rproxy-config
+              mountPath: /etc/nginx/conf.d/
+          
+        - name: interlink
+          image: ubuntu:latest
+          command: ["/interlink/bin/interlink"]
+          ports:
+            - containerPort: {{ .Values.serverPort | default 30080 }}
+
+          volumeMounts: 
+            - name: interlink
+              mountPath: /interlink
+            - name: interlink-config
+              mountPath: /etc/interlink
+
+      volumes:
+        - name: interlink
+          emptyDir:
+            sizeLimit: 1Gi
+
+        - name: interlink-config
+          configMap:
+            name: interlink-config
+            items:
+              - key: interlinkconfig.yaml
+                path: InterLinkConfig.yaml  
+            
+        - name: rproxy-config
+          configMap:
+            name: rproxy-config
+            items:
+              - key: interlink.conf
+                path: interlink.conf
+
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: interlink
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    app: interlink
+    component: server
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+
+
+---
+
+################################################################################
+## oidc-proxy
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: oidc-proxy
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: interlink
+    component: oidc-proxy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: interlink
+      component: oidc-proxy
+  template:
+    metadata:
+      labels:
+        app: interlink
+        component: oidc-proxy
+    spec:
+      containers:
+        - name: interlink
+          image: {{ .Values.oauth2ProxyImage | default "quay.io/oauth2-proxy/oauth2-proxy:v7.6.0" }}
+          command: ["oauth2-proxy"]
+          args: 
+            - --email-domain=*
+            - --client-id={{- .Values.iamClientId | required "missing IAM Client ID" -}}
+            - --client-secret={{- .Values.iamClientSecret | required "missing IAM Client Secret" -}}
+            - --http-address=0.0.0.0:{{- .Values.oauth2ProxyPort | default 8000 -}}
+            - --oidc-issuer-url={{- .Values.oauth2ProxyIamIssuer | default "https://iam.cloud.infn.it/" -}}
+            - --pass-authorization-header=true
+            - --provider=oidc
+            - --scope={{ join " " .Values.iamScopes }}
+            - --oidc-groups-claim={{ .Values.iamGroupsClaim | default "groups" }}
+            - --redirect-url=https://{{- .Values.hostname | required "Field `hostname` not defined." -}}/{{ .Values.serverPathPrefix | default "interlink" }}/callback
+            - --oidc-extra-audience={{- .Values.oauth2ProxyAudience | default "users" -}}
+            - --upstream=http://interlink.{{- .Release.Namespace -}}:80
+            - --allowed-group={{- .Values.iamAllowedGroup -}}
+            - --validate-url={{- .Values.oauth2ProxyTokenUrl | default "https://iam.cloud.infn.it/token" -}}
+            - --cookie-secret={{- .Values.oauth2ProxyCookieSecret | required "Field `oauth2ProxyCookieSecret` not defined." | b64enc -}}
+            - --skip-auth-route="*='*'"
+            - --skip-jwt-bearer-tokens=true 
+            - --proxy-prefix=/{{- .Values.serverPathPrefix -}}
+          ports:
+            - containerPort: {{- .Values.oauth2ProxyPort | default 8000 -}}
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: interlink-oidc
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    app: interlink
+    component: oidc-proxy
+  ports:
+    - protocol: TCP
+      name: http
+      port: 80
+      targetPort: {{- .Values.oauth2ProxyPort | default 8000 -}}
+
+---
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    cert-manager.io/cluster-issuer: lets-issuer
+    nginx.ingress.kubernetes.io/proxy-body-size: "0"
+  name: interlink
+  namespace: {{ .Release.Namespace }}
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: {{ .Values.hostname }} 
+    http:
+      paths:
+      - backend:
+          service:
+            name: interlink-oidc
+            port:
+              name: http
+      path: /{{- .Values.serverPathPrefix -}}
+        pathType: Prefix
+
+  {{ if .Values.certManagerEnabled }}
+  tls:
+  - hosts:
+    - {{ .Values.hostname }}
+    secretName: interlink-tls
+  {{ end }}
+
+
+

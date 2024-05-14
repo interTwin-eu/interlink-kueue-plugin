@@ -1,0 +1,10 @@
+apiVersion: v2
+name: interlink-kueue-plugin
+description: A Helm cart for deploying an interlink endpoint for a kueue backend
+
+type: application
+
+version: 0.0.1
+
+appVersion: "0.0.0"
+
