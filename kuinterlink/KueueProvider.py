@@ -255,10 +255,6 @@ class KueueProvider(interlink.provider.Provider):
         """
         Formats a PodStatus indicating the job has not been scheduled, yet.
         """
-        all_containers = pod.spec.containers
-        if pod.spec.initContainers is not None:
-            all_containers += pod.spec.initContainers
-
         return interlink.PodStatus(
             name=pod.metadata.name,
             UID=pod.metadata.uid,
@@ -269,10 +265,10 @@ class KueueProvider(interlink.provider.Provider):
                     state=interlink.ContainerStates(
                         waiting=interlink.StateWaiting(
                             message="Pending",
-                            reason="Execution enqueued",
+                            reason="Kueued",
                         ),
                     )
-                ) for c in all_containers
+                ) for c in pod.spec.containers
             ]
         )
 
@@ -292,7 +288,6 @@ class KueueProvider(interlink.provider.Provider):
             error_message = traceback.format_exception(e)
             self.logger.error("\n".join(error_message))
             return None
-
 
         container_statuses = (sum([p.status.container_statuses for p in pods.items], [])
                               if len(pods.items) > 0 else [])
