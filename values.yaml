@@ -123,4 +123,6 @@ totalMemoryQuota: 0
 # totalGpuQuota is the amount of nvidia.com/gpu provisioned exclusively via interLink
 totalGpuQuota: 0
 
+# resourceFlavorNodeLabels provide node labels to select specific nodes ro run jobs submitted through interlink
+resourceFlavorNodeLabels: {}
 
