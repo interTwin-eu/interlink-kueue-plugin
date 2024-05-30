@@ -16,7 +16,7 @@ __API_GROUPS__ = dict(
     batch=k8s.client.BatchV1Api,
 )
 
-ApiGroup = Literal['core', 'custom_object']
+ApiGroup = Literal['core', 'custom_object', 'batch']
 
 
 def initialize_k8s():
