@@ -51,6 +51,14 @@ spec:
               cd /interlink/current
               python3 -m uvicorn main:app --reload --host 0.0.0.0 --log-level={{ .Values.pluginLogLevel | default "info" }} --port 8000
 
+          env:
+            - name: DEBUG
+              value: {{ .Values.pluginDebug | default "true" | quote }}
+            - name: NAMESPACE
+              value: {{ .Values.jobsNamespace }}
+            - name: QUEUE
+              value: interlink-{{- .Release.Name }}
+
           ports:
             - containerPort: 8000
 
@@ -194,7 +202,7 @@ subjects:
 apiVersion: kueue.x-k8s.io/v1beta1
 kind: ClusterQueue
 metadata:
-  name: interlink
+  name: interlink-{{- .Release.Name }}
 spec:
   cohort: interlink
   flavorFungibility:
@@ -211,7 +219,7 @@ spec:
     - memory
     - nvidia.com/gpu
     flavors:
-    - name: cpu-only
+    - name: {{ .Release.Name }}
       resources:
       - name: cpu
         nominalQuota: {{ .Values.totalCpuQuota }}
@@ -219,6 +227,15 @@ spec:
         nominalQuota:  {{ .Values.totalMemoryQuota }}
       - name: nvidia.com/gpu
         nominalQuota: {{ .Values.totalGpuQuota }} 
+
+---
+
+apiVersion: kueue.x-k8s.io/v1beta1
+kind: ResourceFlavor
+metadata:
+  name: {{ .Release.Name }}
+spec: 
+  nodeLabels: {{ .Values.resourceFlavorNodeLabels | toJson }}
 
 ---
 
@@ -233,9 +250,9 @@ apiVersion: kueue.x-k8s.io/v1beta1
 kind: LocalQueue
 metadata:
   namespace: {{ .Values.jobsNamespace | required "Please set `jobsNamespace`" }}
-  name: interlink
+  name: interlink-{{- .Release.Name }}
 spec:
-  clusterQueue: interlink
+  clusterQueue: interlink-{{- .Release.Name }}
 
 
 
