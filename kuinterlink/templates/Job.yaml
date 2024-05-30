@@ -127,3 +127,8 @@ spec:
 
         {% endfor %}
       {% endif %}
+
+      tolerations:
+        - effect: NoSchedule
+          key: virtual-node.interlink/no-schedule
+          operator: Exists

@@ -69,6 +69,12 @@ spec:
             initialDelaySeconds: {{ .Values.pluginLivenessInitialDelaySeconds | default 3  }} 
             periodSeconds: {{ .Values.pluginLivenessProbePeriodSeconds | default 3  }}
 
+          env:
+            - name: QUEUE
+              value: interlink
+            - name: NAMESPACE
+              value: {{ .Values.jobsNamespace }}
+
 
           volumeMounts:
             - name: interlink
