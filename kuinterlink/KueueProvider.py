@@ -72,6 +72,7 @@ class KueueProvider(interlink.provider.Provider):
         Create a kueue job containing the pod
         """
         self.logger.info(f"Create pod {pod.metadata.name}.{pod.metadata.namespace} [{pod.metadata.uid}]")
+        self.logger.info(f"Cvmfs claim name: {cfg.CVMFS_CLAIM_NAME}")
 
         config_map_manifests = []
         secret_manifests = []
