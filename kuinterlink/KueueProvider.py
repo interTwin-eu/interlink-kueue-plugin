@@ -72,7 +72,6 @@ class KueueProvider(interlink.provider.Provider):
         Create a kueue job containing the pod
         """
         self.logger.info(f"Create pod {pod.metadata.name}.{pod.metadata.namespace} [{pod.metadata.uid}]")
-        self.logger.info(f"Cvmfs claim name: {cfg.CVMFS_CLAIM_NAME}")
 
         config_map_manifests = []
         secret_manifests = []
@@ -117,11 +116,7 @@ class KueueProvider(interlink.provider.Provider):
                                         job_name=self.get_readable_uid(pod),
                                     ))
 
-            if volume_to_mount.name in ('cvmfs', 'public-cvmfs') and (
-                    volume_to_mount.emptyDir is None and
-                    volume_to_mount.configMap is None and
-                    volume_to_mount.secret is None
-            ):  # Assume it is a request for cvmfs
+            if volume_to_mount.name in ('cvmfs', 'public-cvmfs'):
                 self.logger.info(f"Detected cvmfs volume: {volume_to_mount.name}")
                 cvmfs_volumes.append(volume_to_mount.name)
 
