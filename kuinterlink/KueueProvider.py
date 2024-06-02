@@ -48,9 +48,9 @@ class KueueProvider(interlink.provider.Provider):
         short_name = '-'.join((namespace[:10], pod_name[:10], volume_name[:10]))[:32]
         return '-'.join((short_name, uid))
 
-    @staticmethod
-    def _install_cvmfs_volume(request: Mapping[str, Any], volume_name: str):
+    def _install_cvmfs_volume(self, request: Mapping[str, Any], volume_name: str):
         if not cfg.CVMFS_CLAIM_NAME and not cfg.CVMFS_HOST_PATH:
+            self.logger.error(f"Cannot mount cvmfs for volume '{volume_name}'. Provisioning method not set. ")
             return request
 
         for volume in request['spec']['template']['spec']['volumes']:
@@ -59,8 +59,10 @@ class KueueProvider(interlink.provider.Provider):
                     del volume['emptyDir']
 
                 if cfg.CVMFS_CLAIM_NAME:
+                    self.logger.info(f"Mounting {volume_name} with pvc-csi method")
                     volume['persistentVolumeClaim'] = dict(claimName=cfg.CVMFS_CLAIM_NAME)
                 elif cfg.CVMFS_HOST_PATH:
+                    self.logger.info(f"Mounting {volume_name} with hostPath method")
                     volume['hostPath'] = dict(path=cfg.CVMFS_HOST_PATH, type='Directory')
 
         return request
@@ -118,10 +120,9 @@ class KueueProvider(interlink.provider.Provider):
                     volume_to_mount.emptyDir is None and
                     volume_to_mount.configMap is None and
                     volume_to_mount.secret is None
-            ): ## Assume it is a request for cvmfs
+            ):  # Assume it is a request for cvmfs
+                self.logger.info(f"Detected cvmfs volume: {volume_to_mount.name}")
                 cvmfs_volumes.append(volume_to_mount.name)
-
-
 
         job_desc = pod.dict(exclude_none=True)
         job_desc.update(name=self.get_readable_uid(pod), namespace=cfg.NAMESPACE, queue=cfg.QUEUE)
@@ -129,6 +130,7 @@ class KueueProvider(interlink.provider.Provider):
         parsed_request = parse_template('Job', job=job_desc)
 
         for cvmfs_volume in cvmfs_volumes:
+            self.logger.info(f"Ready to setup cvmfs volume {cvmfs_volume}")
             parsed_request = self._install_cvmfs_volume(parsed_request, cvmfs_volume)
 
         logging.debug("\n\n\n\n CREATE POD: \n\n\n " + pformat(parsed_request) + "\n\n\n\n")
