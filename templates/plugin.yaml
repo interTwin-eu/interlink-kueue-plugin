@@ -58,6 +58,10 @@ spec:
               value: {{ .Values.jobsNamespace }}
             - name: QUEUE
               value: interlink-{{- .Release.Name }}
+            {{ if .Values.cvmfsEnabled }}
+            - name: CVMFS_CLAIM_NAME
+              value: cvmfs
+            {{ end }}
 
           ports:
             - containerPort: 8000
@@ -255,5 +259,21 @@ spec:
   clusterQueue: interlink-{{- .Release.Name }}
 
 
+{{ if .Values.cvmfsEnabled }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: cvmfs
+  namespace: {{ .Values.jobsNamespace | required "Please set `jobsNamespace`" }}
+spec:
+  accessModes:
+  - ReadOnlyMany
+  resources:
+    requests:
+      storage: 1
+  storageClassName: cvmfs
+
+{{ end }}
 
 

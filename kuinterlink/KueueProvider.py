@@ -3,7 +3,7 @@ import traceback
 
 import interlink
 import logging
-from typing import Union, Collection
+from typing import Any, Collection, Mapping, Union
 
 from pprint import pformat
 from fastapi import HTTPException
@@ -48,6 +48,23 @@ class KueueProvider(interlink.provider.Provider):
         short_name = '-'.join((namespace[:10], pod_name[:10], volume_name[:10]))[:32]
         return '-'.join((short_name, uid))
 
+    @staticmethod
+    def _install_cvmfs_volume(request: Mapping[str, Any], volume_name: str):
+        if not cfg.CVMFS_CLAIM_NAME and not cfg.CVMFS_HOST_PATH:
+            return request
+
+        for volume in request['spec']['template']['spec']['volumes']:
+            if volume['name'] == volume_name:
+                if 'emptyDir' in volume:    # clean default configuration
+                    del volume['emptyDir']
+
+                if cfg.CVMFS_CLAIM_NAME:
+                    volume['persistentVolumeClaim'] = dict(claimName=cfg.CVMFS_CLAIM_NAME)
+                elif cfg.CVMFS_HOST_PATH:
+                    volume['hostPath'] = dict(path=cfg.CVMFS_HOST_PATH, type='Directory')
+
+        return request
+
     async def create_job(self,  pod: interlink.PodRequest, volumes: Collection[interlink.Volume]) -> str:
         """
         Create a kueue job containing the pod
@@ -56,6 +73,7 @@ class KueueProvider(interlink.provider.Provider):
 
         config_map_manifests = []
         secret_manifests = []
+        cvmfs_volumes = []
 
         for volume_to_mount in pod.spec.volumes:
             if volume_to_mount.configMap is not None:
@@ -96,10 +114,22 @@ class KueueProvider(interlink.provider.Provider):
                                         job_name=self.get_readable_uid(pod),
                                     ))
 
+            if volume_to_mount.name in ('cvmfs', 'public-cvmfs') and (
+                    volume_to_mount.emptyDir is None and
+                    volume_to_mount.configMap is None and
+                    volume_to_mount.secret is None
+            ): ## Assume it is a request for cvmfs
+                cvmfs_volumes.append(volume_to_mount.name)
+
+
+
         job_desc = pod.dict(exclude_none=True)
         job_desc.update(name=self.get_readable_uid(pod), namespace=cfg.NAMESPACE, queue=cfg.QUEUE)
 
         parsed_request = parse_template('Job', job=job_desc)
+
+        for cvmfs_volume in cvmfs_volumes:
+            parsed_request = self._install_cvmfs_volume(parsed_request, cvmfs_volume)
 
         logging.debug("\n\n\n\n CREATE POD: \n\n\n " + pformat(parsed_request) + "\n\n\n\n")
 

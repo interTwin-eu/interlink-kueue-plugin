@@ -107,6 +107,10 @@ pluginGitSyncPeriod: 10s
 # pluginLogLevel is the log level of uvicorn 
 # see https://www.uvicorn.org/settings/#logging
 pluginLogLevel: info
+
+# cvmfsEnabled enable cvmfs provisioning through the CSI (requires cvmfs-csi!)
+# WARNING! Requires chart: https://github.com/cvmfs-contrib/cvmfs-csi/deployments/helm/cvmfs-csi
+cvmfsEnabled: false
  
 ################################################################################
 # Kueue configuration
