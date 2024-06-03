@@ -1,6 +1,10 @@
 # interlink-kueue-plugin
 A Container plugin (aka sidecar) to connect kueue to interlink
 
+## Prerequisites
+* [Cert-manager](https://cert-manager.io/docs/installation/#default-static-install)
+* [Kueue](https://kueue.sigs.k8s.io/docs/installation/#install-a-released-version)
+
 ## Install in a kubernetes cluster
 
 You can install the interlink endpoint in a kubernetes cluster using the helm chart in this repository.
