@@ -28,6 +28,8 @@ async def create_pod(pods: List[interlink.Pod]) -> interlink.CreateStruct:
     if len(pods) != 1:
         raise HTTPException(402, f"Can only treat one pod creation at once. {len(pods)} were requested.")
 
+    pod = pods[0]
+
     logging.info(f"Creating pod {pod.metadata.namespace}/{pod.metadata.name}")
     return interlink.CreateStruct(
         PodUID=pod.metadata.uid,
