@@ -9,5 +9,5 @@ RUN pip install \
   "pyyaml" \
   "jinja2" \
   "kubernetes-asyncio" \
-  "git+https://github.com/landerlini/interLink.git#egg=interlink&subdirectory=example"
+  "git+https://github.com/intertwin-eu/interLink.git#egg=interlink&subdirectory=example"
 

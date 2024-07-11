@@ -156,7 +156,7 @@ class KueueProvider(interlink.provider.Provider):
         logging.debug(f"Defining job {parsed_request['metadata']['name']}")
         logging.debug(response)
 
-        return "ok"
+        return self.get_readable_uid(pod)
 
     async def delete_pod(self, pod: interlink.PodRequest) -> None:
         try:

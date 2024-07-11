@@ -24,10 +24,12 @@ logging.basicConfig(
 logging.debug("Enabled debug mode.")
 
 @app.post("/create")
-async def create_pod(pods: List[interlink.Pod]) -> str:
-    for pod in pods:
-        await kueue_provider.create_job(pod.pod, pod.container)
-    return "Pod created\n"
+async def create_pod(pod: interlink.Pod) -> interlink.CreateStruct:
+    logging.info(f"Creating pod {pod.metadata.namespace}/{pod.metadata.name}")
+    return interlink.CreateStruct(
+        PodUID=pod.metadata.uid,
+        PodJID=await kueue_provider.create_job(pod.pod, pod.container)
+    )
 
 @app.post("/delete")
 async def delete_pod(pod: interlink.PodRequest) -> str:
