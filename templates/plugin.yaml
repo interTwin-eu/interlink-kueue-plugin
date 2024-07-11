@@ -47,7 +47,7 @@ spec:
           args: 
             - |
               python3 -m pip install --no-deps --force-reinstall \
-                {{ .Values.pluginSpecRepository | default "git+https://github.com/landerlini/interLink.git#egg=interlink&subdirectory=example" | quote}}
+                {{ .Values.pluginSpecRepository | default "git+https://github.com/interTwin-eu/interLink.git#egg=interlink&subdirectory=example" | quote}}
               cd /interlink/current
               python3 -m uvicorn main:app --reload --host 0.0.0.0 --log-level={{ .Values.pluginLogLevel | default "info" }} --port 8000
 

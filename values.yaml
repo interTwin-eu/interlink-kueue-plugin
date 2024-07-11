@@ -6,7 +6,7 @@ hostname:
 # InterLink configuration
 
 # serverVersion is the version of the interlink release to retrieve from GitHub
-serverVersion: 0.2.3-pre7
+serverVersion: 0.3.0
 
 # serverPort is the internal port number to access the interLink server
 serverPort: 30080
@@ -91,7 +91,7 @@ oauth2ProxyCookieSecret:
 pluginRepository: "https://github.com/landerlini/interlink-kueue-plugin"
 
 # pluginSpecRepository is the repository where the reduced k8s apis are defined
-pluginSpecRepository: "git+https://github.com/landerlini/interLink.git#egg=interlink&subdirectory=example"
+pluginSpecRepository: "git+https://github.com/interTwin-eu/interLink.git#egg=interlink&subdirectory=example"
 
 # pluginLivenessInitialDelaySeconds is the initial delay before prompting the plugin healthz.
 pluginLivenessInitialDelaySeconds: 2
